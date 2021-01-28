@@ -202,24 +202,22 @@ EOF
 main::usage() {
   cat << EOF
 Usage: ${SCRIPT_NAME} [COMMAND] [OPTIONs]...
-Mount or dismount Synology SMB Shares.
+Creates/destroys GKE cluster on GCP with ASM deployed in it.
 
 COMMAND:
-  mount                        Mount the specified volume
-  umount                       Unmount the specified volume
-  shares                       List available shares
-  list                         List mounted shares
+  install                       Installs the GKE cluster, ASM and deploys Bookinfo application
+  destroy                       Destroys all created infrastructure, cleaning up the project
+  show-config                   Outputs configuration used by the script
 
 OPTIONS:
-  -v|--volume <VOLUME NAME>    The Synology volume name
+  -p|--project-id <PROJECT ID>  The GCP project ID where the services will be deployed
 
 FLAGS:
-  -a|-all                      Apply to all shares. Only works with unmount command
+  -h                            Shows this help text
 
 EXAMPLES:
-The following invocation mounts the volume "Archive":
-  $> ${SCRIPT_NAME} mount \\
-      -v Archive 
+The following invocation installs GKE, ASM and deploys bookinfo:
+  $> ${SCRIPT_NAME} install
 EOF
 }
 
@@ -247,7 +245,7 @@ parse_command() {
   destroy | uninstall | remove)
     main::destroy
     ;;
-  config)
+  show-config | show_config)
     main::show_config
     ;;
   *) #Catch empty or not listed command
