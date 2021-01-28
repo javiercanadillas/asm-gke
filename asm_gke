@@ -3,18 +3,22 @@
 ## Javier Cañadillas - javiercm@google.com
 #set -x
 
-SCRIPT_NAME="${0##*/}"
-SCRIPT_DIR=$(cd `dirname $0` && pwd)
-ASM_VER_STRING=istio-1.8.1-asm.5
-ASMW=$(echo ${ASM_VER_STRING#*-} | tr \. \-)
-GCP_ACCOUNT=$(gcloud config get-value account)
+# Defaults and unmutable vars
+readonly SCRIPT_NAME="${0##*/}"
+readonly SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+readonly ASM_VER_STRING=istio-1.8.1-asm.5
+readonly ASMV=$(echo ${ASM_VER_STRING#*-} | tr \. -)
+readonly GCP_ACCOUNT=$(gcloud config get-value account 2>/dev/null)
 PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
-PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} \
-  --format="value(projectNumber)" 2>/dev/null)
 CLUSTER_ZONE=europe-west1-b
-CLUSTER_LOCATION=$CLUSTER_ZONE
 CLUSTER_NAME=gke-asm
-MEMBERSHIP_NAME=${CLUSTER_NAME}-connect
+
+
+config::update_vars() {
+  PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" \
+  --format="value(projectNumber)" 2>/dev/null)
+  MEMBERSHIP_NAME=${CLUSTER_NAME}-connect
+}
 
 info() {
   echo "${SCRIPT_NAME}: ${1}" >&2
@@ -22,7 +26,7 @@ info() {
 
 config::pwd_script_dir() {
   info "Setting working directory at ${SCRIPT_DIR}"
-  pushd $SCRIPT_DIR 2>/dev/null
+  pushd "${SCRIPT_DIR}" > /dev/null || return
 }
 
 config::enable_apis() {
@@ -64,13 +68,13 @@ gke::update_labels() {
   info "Updating GKE cluster ${CLUSTER_NAME} with necessary labels"
   gcloud container clusters update $CLUSTER_NAME \
     --update-labels \
-    mesh_id=proj-${PROJECT_NUMBER},asmv=${ASMV}
+    mesh_id=proj-"${PROJECT_NUMBER}",asmv="${ASMV}"
 }
 
 gke::enable_workload_identity() {
   info "Enabling workload identity in GKE cluster ${CLUSTER_NAME}"
   gcloud container clusters update ${CLUSTER_NAME} \
-  --workload-pool=${PROJECT_ID}.svc.id.goog
+  --workload-pool="${PROJECT_ID}".svc.id.goog
 }
 
 gke::register_to_environ() {
@@ -84,7 +88,7 @@ gke::become_cluster_admin() {
   info "Making your account ${GCP_ACCOUNT} cluster admin"
   kubectl create clusterrolebinding cluster-admin-binding \
     --clusterrole cluster-admin \
-    --user ${GCP_ACCOUNT}
+    --user "${GCP_ACCOUNT}"
 }
 
 asm::download_script() {
@@ -95,33 +99,33 @@ asm::download_script() {
 
 asm::validate() {
   info "Validating ASM installation requirements for cluster ${CLUSTER_NAME}"
-  ${SCRIPT_DIR}/install_asm \
-    --project_id ${PROJECT_ID} \
-    --cluster_name ${CLUSTER_NAME} \
-    --cluster_location ${CLUSTER_LOCATION} \
+  "${SCRIPT_DIR}"/install_asm \
+    --project_id "${PROJECT_ID}" \
+    --cluster_name "${CLUSTER_NAME}" \
+    --cluster_location "${CLUSTER_ZONE}" \
     --mode install \
-    --output_dir ${SCRIPT_DIR} \
+    --output_dir "${SCRIPT_DIR}" \
     --only_validate
 }
 
 asm::install() {
   info "Installing ASM on cluster ${CLUSTER_NAME}"
-  ${SCRIPT_DIR}/install_asm \
-    --project_id $PROJECT_ID \
-    --cluster_name $CLUSTER_NAME \
-    --cluster_location $CLUSTER_LOCATION \
+  "${SCRIPT_DIR}"/install_asm \
+    --project_id "${PROJECT_ID}" \
+    --cluster_name "${CLUSTER_NAME}" \
+    --cluster_location "${CLUSTER_ZONE}" \
     --mode install \
-    --output_dir $SCRIPT_DIR \
+    --output_dir "${SCRIPT_DIR}" \
     --enable_all
 }
 
 asm::enable_injection() {
   info "Enabling sidecar injection for the mesh"
-  kubectl label namespace default istio-injection- istio.io/rev=${ASMV} --overwrite
+  kubectl label namespace default istio-injection- istio.io/rev="${ASMV}" --overwrite
 }
 
 app::deploy() {
-  pushd ${ASM_VER_STRING}
+  pushd ${ASM_VER_STRING} || return >/dev/null
   info "Deploying Bookinfo application pods in cluster ${CLUSTER_NAME}"
   kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
   info "Configuring Istio Ingress Gateway for the application"
@@ -138,15 +142,15 @@ app:check_deployment() {
   info "Check that the app is running (from cluster)"
   # Make sure the ratings pod is available before accessing it
   kubectl wait --for=condition=ready pod -l app=ratings --timeout=60s
-  kubectl exec -it $(kubectl get pod -l app=ratings \
-    -o jsonpath='{.items[0].metadata.name}') \
+  kubectl exec -it "$(kubectl get pod -l app=ratings \
+    -o jsonpath='{.items[0].metadata.name}')" \
     -c ratings -- curl productpage:9080/productpage | grep -o  "<title>.*</title>"
 }
 
 app:get_gateway_ip() {
   info "Getting the Istio Ingress Gateway IP address"
   # Loop until the load balancer is up and running
-  while [ -z $GATEWAY_IP ]; do
+  while [ -z "${GATEWAY_IP}" ]; do
       GATEWAY_IP=$(kubectl get svc istio-ingressgateway -o=jsonpath='{.status.loadBalancer.ingress[0].ip}' -n istio-system)
       sleep 1
   done
@@ -181,9 +185,9 @@ main::destroy() {
   gcloud container hub memberships delete "${MEMBERSHIP_NAME}" --quiet
 
   # Delete local files
-  rm -rf "${SCRIPT_DIR}/${ASM_VER_STRING}"
-  rm -rf "${SCRIPT_DIR}/asm"
-  rm *-manifest-*.yaml
+  rm -rf "${SCRIPT_DIR:?}/${ASM_VER_STRING}"
+  rm -rf "${SCRIPT_DIR:?}/asm"
+  rm -- *-manifest-*.yaml
   rm install_asm
 }
 
@@ -205,15 +209,19 @@ Usage: ${SCRIPT_NAME} [COMMAND] [OPTIONs]...
 Creates/destroys GKE cluster on GCP with ASM deployed in it.
 
 COMMAND:
-  install                       Installs the GKE cluster, ASM and deploys Bookinfo application
-  destroy                       Destroys all created infrastructure, cleaning up the project
-  show-config                   Outputs configuration used by the script
+  install                           Installs the GKE cluster, ASM and deploys
+                                    Bookinfo application
+  destroy                           Destroys all created infrastructure,
+                                    cleaning up the project
+  show-config                       Outputs configuration used by the script
 
 OPTIONS:
-  -p|--project-id <PROJECT ID>  The GCP project ID where the services will be deployed
+  -p|--project-id <PROJECT ID>      The GCP project ID where the services will
+                                    be deployed
+  -c|--cluster-name <CLUSTER NAME>  The name of the GKE cluster
 
 FLAGS:
-  -h                            Shows this help text
+  -h                                Shows this help text
 
 EXAMPLES:
 The following invocation installs GKE, ASM and deploys bookinfo:
@@ -273,9 +281,14 @@ parse_args() {
       PROJECT_ID="${2}"
       shift 2
       ;;
-    -c | --cluster_name)
+    -c | --cluster_name | --cluster-name)
       arg_required "${@}"
       CLUSTER_NAME="${2}"
+      shift 2
+      ;;
+    -r | --cluster_zone | --cluster-zone)
+      arg_required "${@}"
+      CLUSTER_ZONE="${2}"
       shift 2
       ;;
     -h | --help)
@@ -297,6 +310,7 @@ parse_args() {
 main() {
   parse_args "${@}"
   parse_command "${PARAMS[*]}"
+  config::update_vars
 }
 
 main "${@}"
