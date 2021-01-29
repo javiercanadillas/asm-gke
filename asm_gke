@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 ## This script is work in progress, designed to be run from Cloud Shell
 ## Javier Cañadillas - javiercm@google.com
+## ToDos:
+## - Enable the script to work on Linux, Cloud Shell and Mac OS X (tooling for OS X
+##   in curl -OL https://github.com/istio/istio/releases/download/1.8.1/istioctl-1.8.1-osx.tar.gz)
+
+# Enable for script debugging
 #set -x
 
 # Defaults and unmutable vars
 readonly __SCRIPT_NAME="${0##*/}"
 readonly __SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-readonly ASM_VER_STRING=istio-1.8.1-asm.5
+readonly ISTIO_VER=1.8.1
+readonly ASM_SUBVER=5
+readonly __ASM_VER_STRING=istio-${ISTIO_VER}-asm.${ASM_SUBVER}
 readonly __ASMV=$(echo ${ASM_VER_STRING#*-} | tr \. -)
 readonly GCP_ACCOUNT=$(gcloud config get-value account 2>/dev/null)
 PROJECT_ID=${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}
