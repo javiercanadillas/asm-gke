@@ -4,29 +4,32 @@
 #set -x
 
 # Defaults and unmutable vars
-readonly SCRIPT_NAME="${0##*/}"
-readonly SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+readonly __SCRIPT_NAME="${0##*/}"
+readonly __SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 readonly ASM_VER_STRING=istio-1.8.1-asm.5
-readonly ASMV=$(echo ${ASM_VER_STRING#*-} | tr \. -)
+readonly __ASMV=$(echo ${ASM_VER_STRING#*-} | tr \. -)
 readonly GCP_ACCOUNT=$(gcloud config get-value account 2>/dev/null)
-PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
+PROJECT_ID=${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}
 CLUSTER_ZONE=europe-west1-b
 CLUSTER_NAME=gke-asm
+red=`tput setaf 1`
+green=`tput setaf 2`
+reset=`tput sgr0`
 
 
 config::update_vars() {
-  PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" \
+  readonly __PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" \
   --format="value(projectNumber)" 2>/dev/null)
-  MEMBERSHIP_NAME=${CLUSTER_NAME}-connect
+  readonly __MEMBERSHIP_NAME=${CLUSTER_NAME}-connect
 }
 
 info() {
-  echo "${SCRIPT_NAME}: ${1}" >&2
+  echo "${green}${__SCRIPT_NAME}${reset}: ${1}" >&2
 }
 
 config::pwd_script_dir() {
-  info "Setting working directory at ${SCRIPT_DIR}"
-  pushd "${SCRIPT_DIR}" > /dev/null || return
+  info "Setting working directory at ${__SCRIPT_DIR}"
+  pushd "${__SCRIPT_DIR}" > /dev/null || return
 }
 
 config::enable_apis() {
@@ -68,7 +71,7 @@ gke::update_labels() {
   info "Updating GKE cluster ${CLUSTER_NAME} with necessary labels"
   gcloud container clusters update $CLUSTER_NAME \
     --update-labels \
-    mesh_id=proj-"${PROJECT_NUMBER}",asmv="${ASMV}"
+    mesh_id=proj-"${PROJECT_NUMBER}",asmv="${__ASMV}"
 }
 
 gke::enable_workload_identity() {
@@ -79,7 +82,7 @@ gke::enable_workload_identity() {
 
 gke::register_to_environ() {
   info "Registering GKE cluster ${CLUSTER_NAME} to the environ"
-  gcloud beta container hub memberships register ${MEMBERSHIP_NAME} \
+  gcloud beta container hub memberships register ${__MEMBERSHIP_NAME} \
     --gke-cluster=${CLUSTER_ZONE}/${CLUSTER_NAME} \
     --enable-workload-identity
 }
@@ -99,29 +102,29 @@ asm::download_script() {
 
 asm::validate() {
   info "Validating ASM installation requirements for cluster ${CLUSTER_NAME}"
-  "${SCRIPT_DIR}"/install_asm \
+  "${__SCRIPT_DIR}"/install_asm \
     --project_id "${PROJECT_ID}" \
     --cluster_name "${CLUSTER_NAME}" \
     --cluster_location "${CLUSTER_ZONE}" \
     --mode install \
-    --output_dir "${SCRIPT_DIR}" \
+    --output_dir "${__SCRIPT_DIR}" \
     --only_validate
 }
 
 asm::install() {
   info "Installing ASM on cluster ${CLUSTER_NAME}"
-  "${SCRIPT_DIR}"/install_asm \
+  "${__SCRIPT_DIR}"/install_asm \
     --project_id "${PROJECT_ID}" \
     --cluster_name "${CLUSTER_NAME}" \
     --cluster_location "${CLUSTER_ZONE}" \
     --mode install \
-    --output_dir "${SCRIPT_DIR}" \
+    --output_dir "${__SCRIPT_DIR}" \
     --enable_all
 }
 
 asm::enable_injection() {
   info "Enabling sidecar injection for the mesh"
-  kubectl label namespace default istio-injection- istio.io/rev="${ASMV}" --overwrite
+  kubectl label namespace default istio-injection- istio.io/rev="${__ASMV}" --overwrite
 }
 
 app::deploy() {
@@ -133,28 +136,30 @@ app::deploy() {
 }
 
 app:check_deployment() {
-  info "Getting deployed services:"
+  info "Checking for Bookinfo application pods readiness:"
   # Wait for deployements to be ready
   kubectl wait --for=condition=available --timeout=60s --all deployments
+  info "Getting default namespace deployed services:"
   kubectl get services
-  info "Getting deployed pods:"
+  info "Getting default namespace deployed pods:"
   kubectl get pods
-  info "Check that the app is running (from cluster)"
-  # Make sure the ratings pod is available before accessing it
+  info "Making sure pod "ratings" is available before connecting to it"
   kubectl wait --for=condition=ready pod -l app=ratings --timeout=60s
+  info "Testing connectivity from pod "ratings" to productpage, you should get an HTML title tag."
   kubectl exec -it "$(kubectl get pod -l app=ratings \
     -o jsonpath='{.items[0].metadata.name}')" \
     -c ratings -- curl productpage:9080/productpage | grep -o  "<title>.*</title>"
+  echo
 }
 
 app:get_gateway_ip() {
-  info "Getting the Istio Ingress Gateway IP address"
+  info "Getting the ASM Ingress Gateway IP address"
   # Loop until the load balancer is up and running
   while [ -z "${GATEWAY_IP}" ]; do
       GATEWAY_IP=$(kubectl get svc istio-ingressgateway -o=jsonpath='{.status.loadBalancer.ingress[0].ip}' -n istio-system)
       sleep 1
   done
-  info "IP is ${GATEWAY_IP}"
+  info "Load Balancer IP is ${GATEWAY_IP}"
 }
 
 main::install() {
@@ -182,30 +187,30 @@ main::destroy() {
   gcloud container clusters delete "${CLUSTER_NAME}" --zone "${CLUSTER_ZONE}" --quiet
 
   # Unregister cluster from Hub
-  gcloud container hub memberships delete "${MEMBERSHIP_NAME}" --quiet
+  gcloud container hub memberships delete "${__MEMBERSHIP_NAME}" --quiet
 
   # Delete local files
-  rm -rf "${SCRIPT_DIR:?}/${ASM_VER_STRING}"
-  rm -rf "${SCRIPT_DIR:?}/asm"
-  rm -- *-manifest-*.yaml
-  rm install_asm
+  rm -rf "${__SCRIPT_DIR:?}/${ASM_VER_STRING}" 2>/dev/null
+  rm -rf "${__SCRIPT_DIR:?}/asm" 2>/dev/null
+  rm -- *-manifest-*.yaml 2>/dev/null
+  rm install_asm 2>/dev/null
 }
 
 main::show_config() {
   cat << EOF
-Script name: ${SCRIPT_NAME}
+This is the configuration to be applied when running ${__SCRIPT_NAME}:
 Google Cloud Project: ${PROJECT_ID}
 GCP account: ${GCP_ACCOUNT}
 Cluster Name: ${CLUSTER_NAME}
 Region/Zone: ${CLUSTER_ZONE}
 ASM Version: ${ASM_VER_STRING}
-Istio Output Directory: ${SCRIPT_DIR}
+Istio Output Directory: ${__SCRIPT_DIR}
 EOF
 }
 
 main::usage() {
   cat << EOF
-Usage: ${SCRIPT_NAME} [COMMAND] [OPTIONs]...
+Usage: ${__SCRIPT_NAME} [COMMAND] [OPTIONs]...
 Creates/destroys GKE cluster on GCP with ASM deployed in it.
 
 COMMAND:
@@ -226,7 +231,7 @@ FLAGS:
 
 EXAMPLES:
 The following invocation installs GKE, ASM and deploys bookinfo:
-  $> ${SCRIPT_NAME} install
+  $> ${__SCRIPT_NAME} install
 EOF
 }
 
@@ -246,7 +251,7 @@ parse_command() {
   case "${1}" in
   install)
     if [ -z "${PROJECT_ID}" ]; then
-      echo "Error: you must set a GCP project. Try doing \'gcloud config set project <projectname>\' before running the script."
+      echo "${red}Error${reset}: you must set a GCP project. Try doing \'gcloud config set project <projectname>\' before running the script."
     else
       main::install
     fi
@@ -310,8 +315,8 @@ parse_args() {
 
 main() {
   parse_args "${@}"
-  parse_command "${PARAMS[*]}"
   config::update_vars
+  parse_command "${PARAMS[*]}"
 }
 
 main "${@}"
