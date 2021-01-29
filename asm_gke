@@ -216,9 +216,10 @@ COMMAND:
   show-config                       Outputs configuration used by the script
 
 OPTIONS:
-  -p|--project-id <PROJECT ID>      The GCP project ID where the services will
+  -p|--project-id <PROJECT ID>      GCP project ID where the services will
                                     be deployed
-  -c|--cluster-name <CLUSTER NAME>  The name of the GKE cluster
+  -c|--cluster-name <CLUSTER NAME>  Name of the GKE cluster
+  -z|--cluster-zone <CLUSTER ZONE>  Location of the GKE cluster
 
 FLAGS:
   -h                                Shows this help text
@@ -286,7 +287,7 @@ parse_args() {
       CLUSTER_NAME="${2}"
       shift 2
       ;;
-    -r | --cluster_zone | --cluster-zone)
+    -z | --cluster_zone | --cluster-zone)
       arg_required "${@}"
       CLUSTER_ZONE="${2}"
       shift 2
