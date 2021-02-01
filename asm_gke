@@ -21,6 +21,7 @@ readonly ASM_SUBVER=5
 readonly __SCRIPT_NAME="${0##*/}"
 readonly __SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 readonly __ASM_VER_STRING=${ISTIO_VER}-asm.${ASM_SUBVER}
+readonly __ASMV=$(echo ${ASM_VER_STRING#*-} | tr \. -)
 readonly __ASM_PACKAGE_NAME=istio-${__ASM_VER_STRING}
 readonly __ASM_DOWNLOAD_URL="https://storage.googleapis.com/gke-release/asm/${__ASM_PACKAGE_NAME}-${PLATFORM}.tar.gz"
 readonly GCP_ACCOUNT=$(gcloud config get-value account 2>/dev/null)
