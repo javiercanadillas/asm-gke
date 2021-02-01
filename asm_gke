@@ -9,19 +9,21 @@
 #set -x
 
 # Defaults and unmutable vars
-readonly __SCRIPT_NAME="${0##*/}"
-readonly __SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-readonly ISTIO_VER=1.8.1
-readonly ASM_SUBVER=5
-readonly __ASM_VER_STRING=istio-${ISTIO_VER}-asm.${ASM_SUBVER}
-readonly __ASMV=$(echo ${ASM_VER_STRING#*-} | tr \. -)
-readonly GCP_ACCOUNT=$(gcloud config get-value account 2>/dev/null)
+PLATFORM=linux-amd64
 PROJECT_ID=${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}
 CLUSTER_ZONE=europe-west1-b
 CLUSTER_NAME=gke-asm
-red=`tput setaf 1`
-green=`tput setaf 2`
-reset=`tput sgr0`
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+reset=$(tput sgr0)
+readonly ISTIO_VER=1.8.1
+readonly ASM_SUBVER=5
+readonly __SCRIPT_NAME="${0##*/}"
+readonly __SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+readonly __ASM_VER_STRING=${ISTIO_VER}-asm.${ASM_SUBVER}
+readonly __ASM_PACKAGE_NAME=istio-${__ASM_VER_STRING}
+readonly __ASM_DOWNLOAD_URL="https://storage.googleapis.com/gke-release/asm/${__ASM_PACKAGE_NAME}-${PLATFORM}.tar.gz"
+readonly GCP_ACCOUNT=$(gcloud config get-value account 2>/dev/null)
 
 
 config::update_vars() {
@@ -78,7 +80,7 @@ gke::update_labels() {
   info "Updating GKE cluster ${CLUSTER_NAME} with necessary labels"
   gcloud container clusters update $CLUSTER_NAME \
     --update-labels \
-    mesh_id=proj-"${PROJECT_NUMBER}",asmv="${__ASMV}"
+    mesh_id=proj-"${__PROJECT_NUMBER}",asmv="${__ASMV}"
 }
 
 gke::enable_workload_identity() {
@@ -102,7 +104,7 @@ gke::become_cluster_admin() {
 }
 
 asm::download_script() {
-  info "Downloading script for ASM ${ASM_VER_STRING} and making it executable"
+  info "Downloading script for ASM ${__ASM_VER_STRING} and making it executable"
   curl https://storage.googleapis.com/csm-artifacts/asm/install_asm_1.8 > install_asm
   chmod +x install_asm
 }
@@ -135,7 +137,7 @@ asm::enable_injection() {
 }
 
 app::deploy() {
-  pushd ${ASM_VER_STRING} || return >/dev/null
+  pushd ${__ASM_PACKAGE_NAME} || return >/dev/null
   info "Deploying Bookinfo application pods in cluster ${CLUSTER_NAME}"
   kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
   info "Configuring Istio Ingress Gateway for the application"
@@ -150,9 +152,9 @@ app:check_deployment() {
   kubectl get services
   info "Getting default namespace deployed pods:"
   kubectl get pods
-  info "Making sure pod "ratings" is available before connecting to it"
+  info "Making sure pod \"ratings\" is available before connecting to it"
   kubectl wait --for=condition=ready pod -l app=ratings --timeout=60s
-  info "Testing connectivity from pod "ratings" to productpage, you should get an HTML title tag."
+  info "Testing connectivity from pod \"ratings\" to productpage, you should get an HTML title tag."
   kubectl exec -it "$(kubectl get pod -l app=ratings \
     -o jsonpath='{.items[0].metadata.name}')" \
     -c ratings -- curl productpage:9080/productpage | grep -o  "<title>.*</title>"
@@ -181,7 +183,6 @@ main::install() {
   asm::validate
   asm::install
   asm::enable_injection
-  app::download_istio_package
   app::deploy
   app:check_deployment
   app:get_gateway_ip
@@ -197,20 +198,27 @@ main::destroy() {
   gcloud container hub memberships delete "${__MEMBERSHIP_NAME}" --quiet
 
   # Delete local files
-  rm -rf "${__SCRIPT_DIR:?}/${ASM_VER_STRING}" 2>/dev/null
+  rm -rf "${__SCRIPT_DIR:?}/${__ASM_PACKAGE_NAME}" 2>/dev/null
   rm -rf "${__SCRIPT_DIR:?}/asm" 2>/dev/null
   rm -- *-manifest-*.yaml 2>/dev/null
   rm install_asm 2>/dev/null
 }
 
+main:get_asm_package() {
+  info "Downloading ASM ${__ASM_VER_STRING}"
+  curl -LO ${__ASM_DOWNLOAD_URL}
+  tar xzf ${__ASM_PACKAGE_NAME}-${PLATFORM}.tar.gz
+}
+
 main::show_config() {
   cat << EOF
 This is the configuration to be applied when running ${__SCRIPT_NAME}:
+Platform: ${PLATFORM}
 Google Cloud Project: ${PROJECT_ID}
 GCP account: ${GCP_ACCOUNT}
 Cluster Name: ${CLUSTER_NAME}
 Region/Zone: ${CLUSTER_ZONE}
-ASM Version: ${ASM_VER_STRING}
+ASM Version: ${__ASM_VER_STRING}
 Istio Output Directory: ${__SCRIPT_DIR}
 EOF
 }
@@ -225,6 +233,8 @@ COMMAND:
                                     Bookinfo application
   destroy                           Destroys all created infrastructure,
                                     cleaning up the project
+  get-asm-package                   Gets ASM package (including samples). Not
+                                    necessary if you've performed an install.                                  
   show-config                       Outputs configuration used by the script
 
 OPTIONS:
@@ -265,6 +275,9 @@ parse_command() {
     ;;
   destroy | uninstall | remove)
     main::destroy
+    ;;
+  get-asm-package | get_asm_package | gip)
+    main:get_asm_package
     ;;
   show-config | show_config)
     main::show_config
