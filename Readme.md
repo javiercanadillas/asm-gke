@@ -37,9 +37,32 @@ Run:
 
 For step-by-step instructions on demoing ASM, read on.
 
+## But I want to run this from my local machine
+The script is not yet ready to deploy the istioclt binaries in your local machine, whatever your operating system may be. It's designed and teste only for Google Cloud Shell. However, you can get a close experience by connecting to Cloud Shell from your local shell using the GCP SDK.
+
+For illustration purposes, let's say you have a Mac. Install Google Cloud SDK, so you have the gcloud tool installed in your system. Now, let's imagine you use iTerm2. Open a new shell session and do, authenticate gcloud with the Google account you'll be using in your GCP project and do:
+
+```bash
+gcloud cloud-shell ssh --authorize-session
+```
+
+Voilà, you now have a Cloud Shell session opened from your local terminal. If you also want to manipulate remote files with an IDE, say VSCode, you can also open a new local shell session and do:
+
+```
+# Creates a mount point for Cloud Shell filesystem
+mkdir -p ~/cloudshell
+# Gets the command to mount the Cloud Shell remote filesystem on cloudshell/ and executes it
+$(cloud cloud-shell get-mount-command cloudshell)
+# Now change to the mount point and open VSCode from there
+cd cloudshell
+code .
+```
+
+You have now your local IDE editing your remote files in Cloud Shell, so you can take advantage of whatever plugins or workflows you may have enabled in your IDE.
+
 # Demoing ASM
 
-Now you have Istio's Bookinfo application deployed. Read the [introduction at Istio's website](https://istio.io/latest/docs/examples/bookinfo/) to understand the basics of what you've just deployed. The application microservices architecture looks like this:
+The `asm_gke` script has deployed Istio's Bookinfo application for you. Read the [introduction at Istio's website](https://istio.io/latest/docs/examples/bookinfo/) to understand the basics of what you've just deployed. The application microservices architecture looks like this:
 
 ![Bookinfo](https://istio.io/latest/docs/examples/bookinfo/noistio.svg)
 
