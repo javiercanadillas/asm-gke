@@ -2,3 +2,4 @@ asm/
 asm-181-5-manifest-*
 install_asm
 istio-1.8.1-asm.5/
+*.tar.gz
