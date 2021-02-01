@@ -1,5 +1,7 @@
 # Common 
 
+This is my draft script for writing the bash script automating the demo foundations. It'll be deleted as soon as instructions for demoing ASM are complete.
+
 Do all this in `~/code`.
 
 ## Export variables
