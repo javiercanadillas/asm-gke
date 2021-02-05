@@ -221,7 +221,7 @@ GCP account: ${GCP_ACCOUNT}
 Cluster Name: ${CLUSTER_NAME}
 Region/Zone: ${CLUSTER_ZONE}
 ASM Version: ${__ASM_VER_STRING}
-Istio Output Directory: ${__SCRIPT_DIR}
+ASM Output Directory: ${__SCRIPT_DIR}
 EOF
 }
 
