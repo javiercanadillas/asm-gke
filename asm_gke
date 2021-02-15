@@ -21,7 +21,9 @@ readonly ASM_SUBVER=5
 readonly __SCRIPT_NAME="${0##*/}"
 readonly __SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 readonly __ASM_VER_STRING=${ISTIO_VER}-asm.${ASM_SUBVER}
-readonly __ASMV=$(echo "${__ASM_VER_STRING}" | tr \. -)
+readonly __ASMV_CLUSTER_LABEL="${__ASM_VER_STRING//\./-}"
+#readonly __ASMV=$(echo "${__ASM_VER_STRING}" | tr \. -)
+readonly __ASMV="asm-$(echo "${ISTIO_VER}" | tr -d '.')-${ASM_SUBVER}"
 readonly __ASM_PACKAGE_NAME=istio-${__ASM_VER_STRING}
 readonly __ASM_DOWNLOAD_URL="https://storage.googleapis.com/gke-release/asm/${__ASM_PACKAGE_NAME}-${PLATFORM}.tar.gz"
 readonly GCP_ACCOUNT=$(gcloud config get-value account 2>/dev/null)
@@ -81,7 +83,7 @@ gke::update_labels() {
   info "Updating GKE cluster ${CLUSTER_NAME} with necessary labels"
   gcloud container clusters update $CLUSTER_NAME \
     --update-labels \
-    mesh_id=proj-"${__PROJECT_NUMBER}",asmv="${__ASMV}"
+    mesh_id=proj-"${__PROJECT_NUMBER}",asmv="${__ASMV__CLUSTER_LABEL}"
 }
 
 gke::enable_workload_identity() {
