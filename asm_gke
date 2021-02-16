@@ -286,6 +286,9 @@ parse_command() {
   show-config | show_config)
     main::show_config
     ;;
+  get-gw-ip | get_gw_ip)
+    asm::get_gateway_ip
+    ;;
   *) #Catch empty or not listed command
     if [ -z "${1}" ]; then
       echo "Error: command not supplied, try again."

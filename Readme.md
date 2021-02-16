@@ -1,8 +1,8 @@
 # Introduction
 
-This repo contains all the necessary artifacts to go from zero to demo Anthos Service Mesh 1.8.1.
+This repo contains all the necessary artifacts to go from zero to demo the latest version of Anthos Service Mesh, ASM 1.8.2.
 
-`asm_gke` automates the deployment and destruction of a Anthos Service Mesh GKE enabled cluster in GCP. The script is designed to work witht the [ASM 1.8.1 installation script](https://cloud.google.com/service-mesh/docs/scripted-install/reference) provided by Google Cloud.
+`asm_gke` automates the deployment and destruction of a Anthos Service Mesh GKE enabled cluster in GCP. The script is designed to work witht the [ASM 1.8.x installation script](https://cloud.google.com/service-mesh/docs/scripted-install/reference) provided by Google Cloud.
 
 The script is designed to work with GCP's Cloud Shell. You will need editor permissions on a GCP project and, if you're a googler, GCE enforcer disabled.
 
@@ -64,11 +64,23 @@ You have now your local IDE editing your remote files in Cloud Shell, so you can
 
 The `asm_gke` script has deployed Istio's Bookinfo application for you. Read the [introduction at Istio's website](https://istio.io/latest/docs/examples/bookinfo/) to understand the basics of what you've just deployed. The application microservices architecture looks like this:
 
-![Bookinfo](https://istio.io/latest/docs/examples/bookinfo/noistio.svg)
+![Bookinfo](https://istio.io/latest/docs/examples/bookinfo/withistio.svg)
 
 Having a polyglot application (with microservices written in different languages), although a reflection of real life, is typically a pain in the ass for a demoer to fully understand the deployment details in Kubernetes. But in this case, we're talking about demoing Istio and it's ability to abstract away implementation details (like security and communications in this case), so it's quite relevant to have it this way.
 
+## Traffic Management
 
+The application as it is should not be accesible from outside the cluster. This is like so because there's no service exposed outside the cluster specific for the application.
+
+
+
+
+First, let's confirm that the application is accesible from outside the cluster:
+
+```bash
+GATEWAY_IP=$(./asm_gke get-gw-ip)
+curl -s "https://GATEWAY_IP
+```
 
 # Tearing down the environment
 To tear down the environment and restore your project the way it was before running the script, run:
