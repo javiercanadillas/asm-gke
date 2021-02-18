@@ -240,6 +240,8 @@ COMMAND:
   get-asm-package                   Gets ASM package (including samples). Not
                                     necessary if you've performed an install.                                  
   show-config                       Outputs configuration used by the script
+  get-gw-ip                         Gets the Ingress Gateway IP address, exposed
+                                    through a Load balancer
 
 OPTIONS:
   -p|--project-id <PROJECT ID>      GCP project ID where the services will

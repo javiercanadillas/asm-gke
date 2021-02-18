@@ -70,10 +70,20 @@ Having a polyglot application (with microservices written in different languages
 
 ## Traffic Management
 
-The application as it is should not be accesible from outside the cluster. This is like so because there's no service exposed outside the cluster specific for the application.
+The application as it is should not be accesible from outside the cluster. This is like so because there's no service exposed outside the cluster specific for the application. You can check that by asking for the services in the cluster:
 
+```bash
+kubectl get svc
+```
 
-
+The output is as follows:
+```text
+details       ClusterIP   10.3.249.116   <none>        9080/TCP   109m
+kubernetes    ClusterIP   10.3.240.1     <none>        443/TCP    117m
+productpage   ClusterIP   10.3.244.28    <none>        9080/TCP   109m
+ratings       ClusterIP   10.3.241.215   <none>        9080/TCP   109m
+reviews       ClusterIP   10.3.247.53    <none>        9080/TCP   109m
+```
 
 First, let's confirm that the application is accesible from outside the cluster:
 
