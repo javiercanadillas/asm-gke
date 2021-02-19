@@ -164,14 +164,19 @@ app:check_deployment() {
   echo
 }
 
-app:get_gateway_ip() {
+asm::get_gateway_ip() {
   info "Getting the ASM Ingress Gateway IP address"
   # Loop until the load balancer is up and running
+  asM::get_gateway_ip_core
+  info "Load Balancer IP is ${GATEWAY_IP}"
+}
+
+asm::get_gateway_ip_core() {
   while [ -z "${GATEWAY_IP}" ]; do
       GATEWAY_IP=$(kubectl get svc istio-ingressgateway -o=jsonpath='{.status.loadBalancer.ingress[0].ip}' -n istio-system)
       sleep 1
   done
-  info "Load Balancer IP is ${GATEWAY_IP}"
+  echo "${GATEWAY_IP}"
 }
 
 main::install() {
@@ -188,7 +193,7 @@ main::install() {
   asm::enable_injection
   app::deploy
   app:check_deployment
-  app:get_gateway_ip
+  asm::get_gateway_ip
 }
 
 main::destroy() {
@@ -289,7 +294,7 @@ parse_command() {
     main::show_config
     ;;
   get-gw-ip | get_gw_ip)
-    asm::get_gateway_ip
+    asm::get_gateway_ip_core
     ;;
   *) #Catch empty or not listed command
     if [ -z "${1}" ]; then
