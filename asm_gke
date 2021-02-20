@@ -167,7 +167,7 @@ app:check_deployment() {
 asm::get_gateway_ip() {
   info "Getting the ASM Ingress Gateway IP address"
   # Loop until the load balancer is up and running
-  asM::get_gateway_ip_core
+  asm::get_gateway_ip_core
   info "Load Balancer IP is ${GATEWAY_IP}"
 }
 
