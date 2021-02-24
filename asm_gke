@@ -4,9 +4,15 @@
 ## ToDos:
 ## - Enable the script to work on Linux, Cloud Shell and Mac OS X (tooling for OS X
 ##   in curl -OL https://github.com/istio/istio/releases/download/1.8.1/istioctl-1.8.1-osx.tar.gz)
+## - Enable workload identity and configure cluster labels in one call at cluster creation, it should be
+##   slightly faster than doing the steps atomically.
+## - Force install_asm to understan the specific version this script is requesting to install. By
+##   default, install_asm always sets the last ASM version, and version stickiness is achieved by
+##   bash variables instead of flags or argument. So, I should export here the corresponding vars
+##   MAJOR, MINOR, POINT and REV
 
-# Enable for script debugging
-#set -x
+# Uncomment following line for full script debugging
+# set -x
 
 # Defaults and unmutable vars
 PLATFORM=linux-amd64
@@ -16,15 +22,17 @@ CLUSTER_NAME=gke-asm
 red=$(tput setaf 1)
 green=$(tput setaf 2)
 reset=$(tput sgr0)
-readonly ISTIO_VER=1.8.2
+readonly ISTIO_VER=1.8.3
 readonly ASM_SUBVER=2
 readonly __SCRIPT_NAME="${0##*/}"
 readonly __SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 readonly __ASM_VER_STRING=${ISTIO_VER}-asm.${ASM_SUBVER}
+# Watch out, ASM version labels for Cluster and Istio injection DO NOT
+# follow the same naming convention
 readonly __ASMV_CLUSTER_LABEL="${__ASM_VER_STRING//\./-}"
-#readonly __ASMV=$(echo "${__ASM_VER_STRING}" | tr \. -)
 readonly __ASMV="asm-$(echo "${ISTIO_VER}" | tr -d '.')-${ASM_SUBVER}"
 readonly __ASM_PACKAGE_NAME=istio-${__ASM_VER_STRING}
+readonly __ASM_SCRIPT_DOWNLOAD_URL="https://storage.googleapis.com/csm-artifacts/asm/install_asm_1.8"
 readonly __ASM_DOWNLOAD_URL="https://storage.googleapis.com/gke-release/asm/${__ASM_PACKAGE_NAME}-${PLATFORM}.tar.gz"
 readonly GCP_ACCOUNT=$(gcloud config get-value account 2>/dev/null)
 
@@ -45,6 +53,8 @@ config::pwd_script_dir() {
 }
 
 config::enable_apis() {
+  # There's a hard limit on API enablements in one call. Make two calls if you're enabling
+  # more than 20 APIs at once
   info "Enabling necessary GCP APIs"
   gcloud services enable \
       container.googleapis.com \
@@ -70,8 +80,9 @@ config:install_packages() {
 
 gke::create_cluster() {
   info "Creating cluster ${CLUSTER_NAME} in zone ${CLUSTER_ZONE}"
-  gcloud config set compute/zone ${CLUSTER_ZONE}
-  gcloud beta container clusters create ${CLUSTER_NAME} \
+  # read -r -p "Press any key to continue"
+  gcloud config set compute/zone "${CLUSTER_ZONE}"
+  gcloud beta container clusters create "${CLUSTER_NAME}" \
       --machine-type=n1-standard-4 \
       --num-nodes=4 \
       --enable-stackdriver-kubernetes \
@@ -79,23 +90,29 @@ gke::create_cluster() {
       --release-channel=regular
 }
 
+gke::rename_apply_context() {
+  info "Renaming context for cluster ${CLUSTER_NAME} and enabling it"
+  kubectx "${CLUSTER_NAME}"=gke_"${PROJECT_ID}"_"${CLUSTER_ZONE}"_"${CLUSTER_NAME}"
+  kubectx "${CLUSTER_NAME}"
+}
+
 gke::update_labels() {
   info "Updating GKE cluster ${CLUSTER_NAME} with necessary labels"
-  gcloud container clusters update $CLUSTER_NAME \
+  gcloud container clusters update "${CLUSTER_NAME}" \
     --update-labels \
-    mesh_id=proj-"${__PROJECT_NUMBER}",asmv="${__ASMV__CLUSTER_LABEL}"
+    mesh_id=proj-"${__PROJECT_NUMBER}",asmv="${__ASMV_CLUSTER_LABEL}"
 }
 
 gke::enable_workload_identity() {
   info "Enabling workload identity in GKE cluster ${CLUSTER_NAME}"
-  gcloud container clusters update ${CLUSTER_NAME} \
+  gcloud container clusters update "${CLUSTER_NAME}" \
   --workload-pool="${PROJECT_ID}".svc.id.goog
 }
 
 gke::register_to_environ() {
   info "Registering GKE cluster ${CLUSTER_NAME} to the environ"
-  gcloud beta container hub memberships register ${__MEMBERSHIP_NAME} \
-    --gke-cluster=${CLUSTER_ZONE}/${CLUSTER_NAME} \
+  gcloud beta container hub memberships register "${__MEMBERSHIP_NAME}" \
+    --gke-cluster="${CLUSTER_ZONE}"/"${CLUSTER_NAME}" \
     --enable-workload-identity
 }
 
@@ -108,7 +125,7 @@ gke::become_cluster_admin() {
 
 asm::download_script() {
   info "Downloading script for ASM ${__ASM_VER_STRING} and making it executable"
-  curl https://storage.googleapis.com/csm-artifacts/asm/install_asm_1.8 > install_asm
+  curl ${__ASM_SCRIPT_DOWNLOAD_URL}  > install_asm
   chmod +x install_asm
 }
 
@@ -183,6 +200,7 @@ main::install() {
   config::pwd_script_dir
   config::enable_apis
   gke::create_cluster
+  gke::rename_apply_context
   gke::update_labels
   gke::enable_workload_identity
   gke::register_to_environ
@@ -255,11 +273,12 @@ OPTIONS:
   -z|--cluster-zone <CLUSTER ZONE>  Location of the GKE cluster
 
 FLAGS:
-  -h                                Shows this help text
+  -d|--debug                        Enable script debugging
+  -h|--help                         Shows this help text
 
 EXAMPLES:
-The following invocation installs GKE, ASM and deploys bookinfo:
-  $> ${__SCRIPT_NAME} install
+The following invocation installs GKE, ASM and deploys bookinfo with debugging enabled
+  $> ${__SCRIPT_NAME} install -d
 EOF
 }
 
@@ -330,6 +349,12 @@ parse_args() {
       arg_required "${@}"
       CLUSTER_ZONE="${2}"
       shift 2
+      ;;
+    -d | --debug)
+      # This is imperfect, because the script has already processed some lines, including default
+      # variable values, but it's better than nothing
+      set -x
+      shift 1
       ;;
     -h | --help)
       main::usage
