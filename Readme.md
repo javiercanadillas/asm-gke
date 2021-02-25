@@ -119,11 +119,86 @@ Containers:
 [...]
 ```
 
-Let's now test that Bookinfo is running 
+We can also test that a specific pod is under the service mesh by using `istioctl`:
+```bash
+./istio-1.8.3-asm.2/bin/istioctl x \
+  describe pod $(kubectl get pods | awk '/productpage/ {print $1}')
+```
+```text
+Pod: productpage-v1-6987489c74-cw22z
+   Pod Ports: 9080 (productpage), 15090 (istio-proxy)
+--------------------
+Service: productpage
+   Port: http 9080/HTTP targets pod port 9080
 
+
+Exposed on Ingress Gateway http://35.195.98.104
+VirtualService: bookinfo
+   /productpage, /static*, /login, /logout, /api/v1/products*
+```
+
+
+Let's now test that we have a Gateway deployed that managing the traffic in our default workspace:
+```bash
+kubectl describe gateway
+```
+```text
+[...]
+Spec:
+  Selector:
+    Istio:  ingressgateway
+[...]
+```
+ 
+ We can see that the gateway object is associated with the default Istio Ingress Gateway, that we can check in the `istio-system` namespace:
+
+ ```bash
+ kubectl describe svc istio-ingressgateway -n istio-system
+ ```
+ ```text
+ [...]
+ Type:                     LoadBalancer
+IP Families:              <none>
+IP:                       10.3.252.189
+IPs:                      <none>
+LoadBalancer Ingress:     35.195.98.104
+[...]
+```
+
+Our external IP, exposed as a Load Balancer, is there as well. Let's save it into a shell variable and test that our application is responding to external HTTP requests:
+
+```bash
+curl -I "${GW_URL:="http://$(./asm_gke get-gw-ip)/productpage"}"
+```
+```text
+HTTP/1.1 200 OK
+content-type: text/html; charset=utf-8
+content-length: 4183
+server: istio-envoy
+[...]
+```
+
+Now copy the application URL in the clipboard:
+
+```bash
+echo "$GW_URL" | pbcopy
+```
+
+and paste (CMD + V) it into your browser address bar to load the BookInfo web page.
 
 ## An overview of the ASM dashboard
 
+To see relevant information in the ASM dashboard, we need to generate some load. Let's do that with an application called `siege`. Because Cloud Shell VM is ephemeral, you'll need to install it first:
+
+```bash
+apt install siege
+```
+
+and the use it to create traffic against your services:
+
+```bash
+siege $GW_URL &
+```
 
 
 ## Traffic Management
