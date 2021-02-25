@@ -68,15 +68,13 @@ The `asm_gke` script has deployed Istio's Bookinfo application for you. Read the
 
 Having a polyglot application (with microservices written in different languages), although a reflection of real life, is typically a pain in the ass for a demoer to fully understand the deployment details in Kubernetes. But in this case, we're talking about demoing Istio and it's ability to abstract away implementation details (like security and communications in this case), so it's quite relevant to have it this way.
 
-## Traffic Management
+## Checking the deployment
 
-The application as it is should not be accesible from outside the cluster. This is like so because there's no service exposed outside the cluster specific for the application. You can check that by asking for the services in the cluster:
+Let's check what we've got deployed in the default namespace by getting the services:
 
 ```bash
 kubectl get svc
 ```
-
-The output is as follows:
 ```text
 details       ClusterIP   10.3.249.116   <none>        9080/TCP   109m
 kubernetes    ClusterIP   10.3.240.1     <none>        443/TCP    117m
@@ -85,7 +83,67 @@ ratings       ClusterIP   10.3.241.215   <none>        9080/TCP   109m
 reviews       ClusterIP   10.3.247.53    <none>        9080/TCP   109m
 ```
 
-First, let's confirm that the application is accesible from outside the cluster:
+(If the previous command throws an authentication error because you're Cloud Shell VM stopped, just grab the cluster credentials again with `gcloud container clusters get-credentials gke-asm --zone europe-west1-b`)
+
+Let's have a look at the pods that actually implement the service:
+
+```bash
+kubectl get pods
+```
+```text
+NAME                              READY   STATUS    RESTARTS   AGE
+details-v1-558b8b4b76-kg24c       2/2     Running   0          15h
+productpage-v1-6987489c74-sd7xv   2/2     Running   0          15h
+ratings-v1-7dc98c7588-dfr5w       2/2     Running   0          15h
+reviews-v1-7f99cc4496-xcn2f       2/2     Running   0          15h
+reviews-v2-7d79d5bd5d-x26ds       2/2     Running   0          15h
+reviews-v3-7dbcdcbc56-twlh2       2/2     Running   0          15h
+```
+
+Each pod has two containers running, one for implementing the service logic and the other one for the ASM proxy sidecar that has been injected automatically when deploying the application. We can see that by inspecting any of the services and having a look a the `Containers` attribute:
+
+```bash
+kubectl describe pod productpage
+```
+```text
+[...]
+Containers:
+  productpage:
+    Container ID:   docker://b6929b11f06079328f9c379d2e54b9849245d232aab9d18c412d09fc4f58eda9
+    Image:          docker.io/istio/examples-bookinfo-productpage-v1:1.16.2
+[...]
+  istio-proxy:
+    Container ID:  docker://1b10430bf7f1576b77b6248876f88358253f8f879935356d27368828b42f1996
+    Image:         gcr.io/gke-release/asm/proxyv2:1.8.3-asm.2
+    Image ID:      docker-pullable://gcr.io/gke-release/asm/proxyv2@sha256:d3c55c913888d4d50d3f5e6f50461af14592327bc40078a67e6529ebc935bf0f
+[...]
+```
+
+Let's now test that Bookinfo is running 
+
+
+## An overview of the ASM dashboard
+
+
+
+## Traffic Management
+
+**The application as it is should not be accesible from outside the cluster**. This is like so because there's no service exposed outside the cluster specific for the application. You can check that by asking for the services in the cluster:
+
+```bash
+kubectl get svc
+```
+
+The output should be as follows:
+```text
+details       ClusterIP   10.3.249.116   <none>        9080/TCP   109m
+kubernetes    ClusterIP   10.3.240.1     <none>        443/TCP    117m
+productpage   ClusterIP   10.3.244.28    <none>        9080/TCP   109m
+ratings       ClusterIP   10.3.241.215   <none>        9080/TCP   109m
+reviews       ClusterIP   10.3.247.53    <none>        9080/TCP   109m
+```
+
+First, let's confirm that the application is now accesible from outside the cluster:
 
 ```bash
 GATEWAY_IP=$(./asm_gke get-gw-ip)
