@@ -278,41 +278,154 @@ kubectl get destinationrules
 No resources found in default namespace.
 ```
 
-Currently, **no destination rules exist** because the installation script didn't create any. Let's now define all the available versions, using a subset for all of them, in destination rules.
+### Apply destination rules for all versions
+
+Currently, **no destination rules exist** because the installation script didn't create any. Let's now define all the available versions, using the concept of subset, in destination rules.
 
 The file we're going to be applying here is `artifacts/destination-rule-all.yaml`. **Edit it and have a look at its structure**:
 
 ```yaml
-
+cat artifacts/destination-rule-all.yaml
 ```
 
-Apply a config that defines 4 DestinationRule resources, 1 for each service.
+Then, apply a config that defines 4 `DestinationRule` resources, 1 for each service (all are in the same file):
 
+```bash
 kubectl apply -f samples/bookinfo/networking/destination-rule-all.yaml
-Output (do not copy)
-
+```
+```text
 destinationrule.networking.istio.io/productpage created
 destinationrule.networking.istio.io/reviews created
 destinationrule.networking.istio.io/ratings created
 destinationrule.networking.istio.io/details created
 Check that 4 DestinationRule resources were defined.
+```
 
+Then, let's test that our destination rules have been applied:
+
+```bash
 kubectl get destinationrules
-Output (do not copy)
-
+```
+```text
 NAME          HOST          AGE
 details       details       1m
 productpage   productpage   1m
 ratings       ratings       1m
 reviews       reviews       1m
-Click Check my progress to verify the objective.
-Apply default destination rules, for all available versions
+```
 
-Review the details of the destination rules.
+You can review the details of the destination rules by asking for the yaml:
 
+```bash
 kubectl get destinationrules -o yaml
-Notice that subsets are defined within the spec of a DestinationRule.
+```
 
+**Notice that subsets are defined within the spec of a DestinationRule**.
+
+Now wait for a couple of minutes and go back to the **Anthos Service Mesh console**. Select the **reviews** service and then select **Traffic** from the left menu. You should see that the traffic is evenly distributed into the three versions.
+
+### Configure Virtual Services to use these Destination Rules
+
+Let's now deploy new virtual services for each service that are going to route all traffic to just v1 of the services workload. First, have a look at the new virtual services we're just going to deploy:
+
+```bash
+cat artifacts/virtual-service-all-v1.yaml
+```
+```text
+virtualservice.networking.istio.io/productpage created
+virtualservice.networking.istio.io/reviews created
+virtualservice.networking.istio.io/ratings created
+virtualservice.networking.istio.io/details created
+``` 
+
+Check that 4 routes, VirtualService resources, were defined:
+
+```bash
+kubectl get virtualservices
+```
+
+Now test the new behavior. Go to the **Anthos Service Mesh console** and select the reviews service and then in the **left menu, select Traffic** If siege is still running, you should see the traffic statistics of, say, service reviews, to start being unbalanced towards the reviews-v1 service that has been tagged with v1 by the destinationrule. Play with the timeline so you can focus in the last two minutes to see more about the effect of the traffic change.
+
+You can also check it by going to `http://GW_URL`, refreshing several times and noticing that **the Book Reviews part of the page displays with no rating stars**, no matter how many times you refresh. This is because you configured Istio to route all traffic for the reviews service to the version reviews:v1 and **this version of the service does not access the star ratings service**.
+
+### Route to specific version of a service based on user identity
+
+You can also change the route configuration so that all traffic from a specific user is routed to a specific service version. In this case, all traffic from user Javiier will be routed to the service reviews:v2, the version that includes the star ratings feature.
+
+Note: Istio does not have any special, built-in understanding of user identity. This example is enabled by the fact that the productpage service adds a custom end-user header to all outbound HTTP requests to the reviews service.
+
+Review the new VirtualService config:
+
+cat ./samples/bookinfo/networking/virtual-service-reviews-test-v2.yaml
+Output (do not copy)
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+    - reviews
+  http:
+  - match:
+    - headers:
+        end-user:
+          exact: jason
+    route:
+    - destination:
+        host: reviews
+        subset: v2
+  - route:
+    - destination:
+        host: reviews
+        subset: v1
+Apply the config that defines 1 VirtualService resource:
+
+kubectl apply -f samples/bookinfo/networking/virtual-service-reviews-test-v2.yaml
+Output (do not copy)
+
+virtualservice.networking.istio.io/reviews configured
+Confirm the rule is created:
+
+kubectl get virtualservice reviews
+Output (do not copy)
+
+NAME      GATEWAYS   HOSTS       AGE
+reviews              [reviews]   35m
+Test the new routing configuration using the Bookinfo UI.
+
+Browse again to /productpage of the Bookinfo application.
+This time, click Sign in, and use User Name of jason with no password.
+Notice the UI shows stars from the rating service.
+
+You can sign out, and try signing in as other users. You will no longer see stars with reviews.
+
+To better visualize the effect of the new traffic routing, you can create a new background load of authenticated requests to the service.
+
+Start a new siege session, generating only 20% of the traffic of the first, but with all requests being authenticated as jason.
+
+curl -c cookies.txt -F "username=jason" -L -X \
+    POST http://$GATEWAY_URL/login
+cookie_info=$(grep -Eo "session.*" ./cookies.txt)
+cookie_name=$(echo $cookie_info | cut -d' ' -f1)
+cookie_value=$(echo $cookie_info | cut -d' ' -f2)
+siege -c 5 http://$GATEWAY_URL/productpage \
+    --header "Cookie: $cookie_name=$cookie_value"
+Wait for 1-2 minutes, refresh the page showing the Infrastructure telemetry, then check in the Anthos Dashboard and you should see that roughly 85% of requests over the last few minutes have gone to version 1 because they are unathenticated. About 15% have gone to version two because they are made as jason.
+15% Authenticated
+
+In Cloud Shell, cancel the siege session by typing Ctrl+c.
+
+Clean up from this task by removing the application virtual services.
+
+kubectl delete -f samples/bookinfo/networking/virtual-service-all-v1.yaml
+Output (do not copy)
+
+virtualservice.networking.istio.io "productpage" deleted
+virtualservice.networking.istio.io "reviews" deleted
+virtualservice.networking.istio.io "ratings" deleted
+virtualservice.networking.istio.io "details" deleted
+You can wait for 1-2 minutes, refresh the Anthos Service Mesh dashboard, and confirm that traffic is once again evenly balanced across versions.
 
 
 # Tearing down the environment
