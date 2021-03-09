@@ -220,7 +220,100 @@ Now, go to [console.cloud.google.com] and
 
 ## Traffic Management
 
-Our application has a gateway configuration artifact called `bookinfo-gateway` that controls the configuration of the Ingress Gateway
+Our application has a gateway configuration artifact called `bookinfo-gateway` that controls the configuration of the Ingress Gateway. We've already explored its configuration, it just enables HTTP traffic over port 80.
+
+Let's now explore the `VirtualService` used by Bookinfo to route traffic from the gateway:
+
+```bash
+kubectl get virtualservices
+```
+
+We can see that VirtualService is defined and a Gateway is attached to it. This has been put in place by the `asm_gke` script that you run during installation by performing a `kubectl apply -f bookinfo-gateway.yaml`. We can see the details of the service using `kubectl`:
+
+
+```bash
+kubectl describe virtualservices bookinfo
+```
+```text
+Name:         bookinfo
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  networking.istio.io/v1beta1
+Kind:         VirtualService
+[...]
+Spec:
+  Gateways:
+    bookinfo-gateway
+  Hosts:
+    *
+  Http:
+    Match:
+      Uri:
+        Exact:  /productpage
+      Uri:
+        Prefix:  /static
+      Uri:
+        Exact:  /login
+      Uri:
+        Exact:  /logout
+      Uri:
+        Prefix:  /api/v1/products
+    Route:
+      Destination:
+        Host:  productpage
+        Port:
+          Number:  9080
+Events:            <none>
+```
+
+Virtual services, along with destination rules, are the key building blocks of Istio’s traffic routing functionality that ASM is using. While Virtual Services define how you route traffic **to a given destination**, Destination Rules then let you configure what happens to the traffic **for that destination**. Destination rules are applied after Virtual service routing has been evaluated, so they actually appli to the traffic's real destination.
+
+Let's see what destination Rules we've got in place:
+
+```bash
+kubectl get destinationrules
+```
+```text
+No resources found in default namespace.
+```
+
+Currently, **no destination rules exist** because the installation script didn't create any. Let's now define all the available versions, using a subset for all of them, in destination rules.
+
+The file we're going to be applying here is `artifacts/destination-rule-all.yaml`. **Edit it and have a look at its structure**:
+
+```yaml
+
+```
+
+Apply a config that defines 4 DestinationRule resources, 1 for each service.
+
+kubectl apply -f samples/bookinfo/networking/destination-rule-all.yaml
+Output (do not copy)
+
+destinationrule.networking.istio.io/productpage created
+destinationrule.networking.istio.io/reviews created
+destinationrule.networking.istio.io/ratings created
+destinationrule.networking.istio.io/details created
+Check that 4 DestinationRule resources were defined.
+
+kubectl get destinationrules
+Output (do not copy)
+
+NAME          HOST          AGE
+details       details       1m
+productpage   productpage   1m
+ratings       ratings       1m
+reviews       reviews       1m
+Click Check my progress to verify the objective.
+Apply default destination rules, for all available versions
+
+Review the details of the destination rules.
+
+kubectl get destinationrules -o yaml
+Notice that subsets are defined within the spec of a DestinationRule.
+
+
 
 # Tearing down the environment
 To tear down the environment and restore your project the way it was before running the script, run:
@@ -228,3 +321,16 @@ To tear down the environment and restore your project the way it was before runn
 ```bash
 ./asm_gke destroy
 ```
+
+# Todos
+
+- Include installation option to enable Anthos 1.9 Managed Control Plane instead of deploying it in the Kubernetes cluster
+- Add installation option to deploy a ASM-enable GCE VM, moving one of the bookinfo services there.
+- Enable the script to work on Linux, Cloud Shell and Mac OS X (tooling for OS X
+  in curl -OL https://github.com/istio/istio/releases/download/1.8.1/istioctl-1.8.1-osx.tar.gz)
+- Enable workload identity and configure cluster labels in one call at cluster creation, it should be
+  slightly faster than doing the steps atomically.
+- Force install_asm to understan the specific version this script is requesting to install. By
+  default, install_asm always sets the last ASM version, and version stickiness is achieved by
+  bash variables instead of flags or argument. So, I should export here the corresponding vars
+  MAJOR, MINOR, POINT and REV

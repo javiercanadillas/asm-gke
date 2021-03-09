@@ -1,15 +1,6 @@
 #!/usr/bin/env bash
 ## This script is work in progress, designed to be run from Cloud Shell
 ## Javier Cañadillas - javiercm@google.com
-## ToDos:
-## - Enable the script to work on Linux, Cloud Shell and Mac OS X (tooling for OS X
-##   in curl -OL https://github.com/istio/istio/releases/download/1.8.1/istioctl-1.8.1-osx.tar.gz)
-## - Enable workload identity and configure cluster labels in one call at cluster creation, it should be
-##   slightly faster than doing the steps atomically.
-## - Force install_asm to understan the specific version this script is requesting to install. By
-##   default, install_asm always sets the last ASM version, and version stickiness is achieved by
-##   bash variables instead of flags or argument. So, I should export here the corresponding vars
-##   MAJOR, MINOR, POINT and REV
 
 # Uncomment following line for full script debugging
 # set -x
