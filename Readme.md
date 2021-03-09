@@ -220,26 +220,7 @@ Now, go to [console.cloud.google.com] and
 
 ## Traffic Management
 
-**The application as it is should not be accesible from outside the cluster**. This is like so because there's no service exposed outside the cluster specific for the application. You can check that by asking for the services in the cluster:
-
-```bash
-kubectl get svc
-```
-
-The output should be as follows:
-```text
-details       ClusterIP   10.3.249.116   <none>        9080/TCP   109m
-kubernetes    ClusterIP   10.3.240.1     <none>        443/TCP    117m
-productpage   ClusterIP   10.3.244.28    <none>        9080/TCP   109m
-ratings       ClusterIP   10.3.241.215   <none>        9080/TCP   109m
-reviews       ClusterIP   10.3.247.53    <none>        9080/TCP   109m
-```
-
-First, let's confirm that the application is now accesible from outside the cluster:
-
-```bash
-curl -s "https://GW_IP
-```
+Our application has a gateway configuration artifact called `bookinfo-gateway` that controls the configuration of the Ingress Gateway
 
 # Tearing down the environment
 To tear down the environment and restore your project the way it was before running the script, run:
