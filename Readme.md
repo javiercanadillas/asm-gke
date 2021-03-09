@@ -274,6 +274,45 @@ Let's see what destination Rules we've got in place:
 ```bash
 kubectl get destinationrules
 ```
+```text
+No resources found in default namespace.
+```
+
+Currently, **no destination rules exist** because the installation script didn't create any. Let's now define all the available versions, using a subset for all of them, in destination rules.
+
+The file we're going to be applying here is `artifacts/destination-rule-all.yaml`. **Edit it and have a look at its structure**:
+
+```yaml
+
+```
+
+Apply a config that defines 4 DestinationRule resources, 1 for each service.
+
+kubectl apply -f samples/bookinfo/networking/destination-rule-all.yaml
+Output (do not copy)
+
+destinationrule.networking.istio.io/productpage created
+destinationrule.networking.istio.io/reviews created
+destinationrule.networking.istio.io/ratings created
+destinationrule.networking.istio.io/details created
+Check that 4 DestinationRule resources were defined.
+
+kubectl get destinationrules
+Output (do not copy)
+
+NAME          HOST          AGE
+details       details       1m
+productpage   productpage   1m
+ratings       ratings       1m
+reviews       reviews       1m
+Click Check my progress to verify the objective.
+Apply default destination rules, for all available versions
+
+Review the details of the destination rules.
+
+kubectl get destinationrules -o yaml
+Notice that subsets are defined within the spec of a DestinationRule.
+
 
 
 # Tearing down the environment

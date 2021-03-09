@@ -3,3 +3,4 @@ asm-*-manifest-*
 install_asm
 istio*/
 *.tar.gz
+istioctl
