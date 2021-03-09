@@ -168,8 +168,8 @@ LoadBalancer Ingress:     35.195.98.104
 Our external IP, exposed as a Load Balancer, is there as well. Let's save it into a shell variable and test that our application is responding to external HTTP requests:
 
 ```bash
-GW_IP=$(./asm_gke get-gw-ip)
-curl -I "${GW_URL:="http://$GW_IP/productpage"}"
+source ./setenv
+curl -I "$GW_URL"
 ```
 ```text
 HTTP/1.1 200 OK
