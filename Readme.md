@@ -168,7 +168,8 @@ LoadBalancer Ingress:     35.195.98.104
 Our external IP, exposed as a Load Balancer, is there as well. Let's save it into a shell variable and test that our application is responding to external HTTP requests:
 
 ```bash
-curl -I "${GW_URL:="http://$(./asm_gke get-gw-ip)/productpage"}"
+GW_IP=$(./asm_gke get-gw-ip)
+curl -I "${GW_URL:="http://$GW_IP/productpage"}"
 ```
 ```text
 HTTP/1.1 200 OK
@@ -191,7 +192,7 @@ and paste (CMD + V) it into your browser address bar to load the BookInfo web pa
 To see relevant information in the ASM dashboard, we need to generate some load. Let's do that with an application called `siege`. Because Cloud Shell VM is ephemeral, you'll need to install it first:
 
 ```bash
-apt install siege
+sudo apt install siege
 ```
 
 and the use it to create traffic against your services:
@@ -199,6 +200,22 @@ and the use it to create traffic against your services:
 ```bash
 siege $GW_URL &
 ```
+
+### Evaluating service performance using ASM's dashboard
+
+Now, go to [console.cloud.google.com] and 
+- navigate to **Anthos>Dashboard**
+- Click on **View Service Mesh**\
+  ![View Service Mesh](./img/view_service_mesh.png)
+- Observe the services listed in the **bottom half of the page, under the section named Services**
+- Click on a specific service, **productpage**, to drill down and see more details. Note the summary at the top right detailing current requests/second, error rates, latencies, and resource usage.
+- On the **left side menu**, click on **Metrics** option and review this page.
+- On the **left side menu**, click on **Connected Services** option and review this page.
+  - This lists other services that make inbound requests to the productpage, and other services the productpage service makes outbound requests to.
+  - Click on the **INBOUND** and **OUTBOUND** tabs and note that all request go through mTLS
+- Return to the **Main ASM dashboard** by clicking on the **ASM logo**.
+- Click on **TOPOLOGY in the upper right corner** to view the mesh topology.
+- **Rearrange the nodes in the graph** to easily visualize the relationships.
 
 
 ## Traffic Management
@@ -221,8 +238,7 @@ reviews       ClusterIP   10.3.247.53    <none>        9080/TCP   109m
 First, let's confirm that the application is now accesible from outside the cluster:
 
 ```bash
-GATEWAY_IP=$(./asm_gke get-gw-ip)
-curl -s "https://GATEWAY_IP
+curl -s "https://GW_IP
 ```
 
 # Tearing down the environment
