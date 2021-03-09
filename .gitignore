@@ -4,3 +4,4 @@ install_asm
 istio*/
 *.tar.gz
 istioctl
+asm_kubeconfig
