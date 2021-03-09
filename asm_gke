@@ -205,6 +205,7 @@ asm::get_gateway_ip_core() {
 main::install() {
   config::pwd_script_dir
   config::enable_apis
+  config::install_packages
   gke::create_cluster
   gke::rename_apply_context
   gke::update_labels
