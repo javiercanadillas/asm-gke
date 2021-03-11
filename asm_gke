@@ -225,6 +225,7 @@ main::destroy() {
   rm -rf "${__SCRIPT_DIR:?}/${__ASM_PACKAGE_NAME}" 2>/dev/null
   rm -rf "${__SCRIPT_DIR:?}/asm" 2>/dev/null
   rm -rf "${__ASM_PACKAGE_NAME}-${PLATFORM}.tar.gz" 2>/dev/null
+  rm -rf istioctl
   rm -- *-manifest-*.yaml 2>/dev/null
   rm install_asm 2>/dev/null
 }
