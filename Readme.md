@@ -205,7 +205,7 @@ siege $GW_URL &
 
 Now, go to [console.cloud.google.com] and 
 - navigate to **Anthos>Dashboard**
-- Click on **View Service Mesh**\
+- Click on **View Service Mesh**
   ![View Service Mesh](img/view_service_mesh.png)
 - Observe the services listed in the **bottom half of the page, under the section named Services**
 - Click on a specific service, **productpage**, to drill down and see more details. Note the summary at the top right detailing current requests/second, error rates, latencies, and resource usage.
@@ -401,43 +401,11 @@ NAME      GATEWAYS   HOSTS       AGE
 reviews              [reviews]   35m
 ```
 
-Now test the new routing configuration using the Bookinfo UI. Browse again to /productpage of the Bookinfo application.
-
-This time, click Sign in, and use User Name of jason with no password. Notice the UI shows stars from the rating service, which is the version of the service that shows stars.
+Now test the new routing configuration using the Bookinfo UI:
+- Browse again to `/productpage` of the Bookinfo application.
+- Click **Sign in**, and use User Name of jason with no password. Notice the UI shows stars from the rating service, which is the version of the service that shows stars.
 
 You can sign out, and try signing in as other users. You will no longer see stars with reviews.
-
-To better visualize the effect of the new traffic routing, you can create a new background load of authenticated requests to the service.
-
-Start a new siege session, generating only 20% of the traffic of the first, but with all requests being authenticated as jason.
-
-```bash
-curl -c cookies.txt -F "username=jason" -L -X \
-    POST http://$GATEWAY_URL/login
-cookie_info=$(grep -Eo "session.*" ./cookies.txt)
-cookie_name=$(echo $cookie_info | cut -d' ' -f1)
-cookie_value=$(echo $cookie_info | cut -d' ' -f2)
-siege -c 5 http://$GATEWAY_URL/productpage \
-    --header "Cookie: $cookie_name=$cookie_value"
-```
-
-Wait for 1-2 minutes, refresh the page showing the Infrastructure telemetry, then check in the Anthos Dashboard and you should see that roughly 85% of requests over the last few minutes have gone to version 1 because they are unathenticated. About 15% have gone to version two because they are made as jason.
-
-15% Authenticated
-
-In Cloud Shell, cancel the siege session by typing Ctrl+c.
-
-Clean up from this task by removing the application virtual services.
-
-kubectl delete -f samples/bookinfo/networking/virtual-service-all-v1.yaml
-Output (do not copy)
-
-virtualservice.networking.istio.io "productpage" deleted
-virtualservice.networking.istio.io "reviews" deleted
-virtualservice.networking.istio.io "ratings" deleted
-virtualservice.networking.istio.io "details" deleted
-You can wait for 1-2 minutes, refresh the Anthos Service Mesh dashboard, and confirm that traffic is once again evenly balanced across versions.
-
 
 # Tearing down the environment
 To tear down the environment and restore your project the way it was before running the script, run:
@@ -449,6 +417,7 @@ To tear down the environment and restore your project the way it was before runn
 # Todos
 
 - Include installation option to enable Anthos 1.9 Managed Control Plane instead of deploying it in the Kubernetes cluster
+- Include gradual shift of traffic per service version.
 - Add installation option to deploy a ASM-enable GCE VM, moving one of the bookinfo services there.
 - Enable the script to work on Linux, Cloud Shell and Mac OS X (tooling for OS X
   in curl -OL https://github.com/istio/istio/releases/download/1.8.1/istioctl-1.8.1-osx.tar.gz)
