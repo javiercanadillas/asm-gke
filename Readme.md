@@ -206,7 +206,7 @@ siege $GW_URL &
 Now, go to [console.cloud.google.com] and 
 - navigate to **Anthos>Dashboard**
 - Click on **View Service Mesh**\
-  ![View Service Mesh](./img/view_service_mesh.png)
+  ![View Service Mesh](img/view_service_mesh.png)
 - Observe the services listed in the **bottom half of the page, under the section named Services**
 - Click on a specific service, **productpage**, to drill down and see more details. Note the summary at the top right detailing current requests/second, error rates, latencies, and resource usage.
 - On the **left side menu**, click on **Metrics** option and review this page.
@@ -350,15 +350,16 @@ You can also check it by going to `http://GW_URL`, refreshing several times and 
 
 ### Route to specific version of a service based on user identity
 
-You can also change the route configuration so that all traffic from a specific user is routed to a specific service version. In this case, all traffic from user Javiier will be routed to the service reviews:v2, the version that includes the star ratings feature.
+You can also change the route configuration so that all traffic from a specific user is routed to a specific service version. In this case, all traffic from user jason will be routed to the service reviews:v2, the version that includes the star ratings feature.
 
 Note: Istio does not have any special, built-in understanding of user identity. This example is enabled by the fact that the productpage service adds a custom end-user header to all outbound HTTP requests to the reviews service.
 
 Review the new VirtualService config:
 
-cat ./samples/bookinfo/networking/virtual-service-reviews-test-v2.yaml
-Output (do not copy)
-
+```bash
+more ./artifacts/virtual-service-reviews-test-v2.yaml
+```
+```text
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
@@ -379,24 +380,30 @@ spec:
     - destination:
         host: reviews
         subset: v1
+```
+
 Apply the config that defines 1 VirtualService resource:
 
+```bash
 kubectl apply -f samples/bookinfo/networking/virtual-service-reviews-test-v2.yaml
-Output (do not copy)
-
+```
+```text
 virtualservice.networking.istio.io/reviews configured
+````
+
 Confirm the rule is created:
 
+```bash
 kubectl get virtualservice reviews
-Output (do not copy)
-
+```
+```
 NAME      GATEWAYS   HOSTS       AGE
 reviews              [reviews]   35m
-Test the new routing configuration using the Bookinfo UI.
+```
 
-Browse again to /productpage of the Bookinfo application.
-This time, click Sign in, and use User Name of jason with no password.
-Notice the UI shows stars from the rating service.
+Now test the new routing configuration using the Bookinfo UI. Browse again to /productpage of the Bookinfo application.
+
+This time, click Sign in, and use User Name of jason with no password. Notice the UI shows stars from the rating service, which is the version of the service that shows stars.
 
 You can sign out, and try signing in as other users. You will no longer see stars with reviews.
 
@@ -404,6 +411,7 @@ To better visualize the effect of the new traffic routing, you can create a new 
 
 Start a new siege session, generating only 20% of the traffic of the first, but with all requests being authenticated as jason.
 
+```bash
 curl -c cookies.txt -F "username=jason" -L -X \
     POST http://$GATEWAY_URL/login
 cookie_info=$(grep -Eo "session.*" ./cookies.txt)
@@ -411,7 +419,10 @@ cookie_name=$(echo $cookie_info | cut -d' ' -f1)
 cookie_value=$(echo $cookie_info | cut -d' ' -f2)
 siege -c 5 http://$GATEWAY_URL/productpage \
     --header "Cookie: $cookie_name=$cookie_value"
+```
+
 Wait for 1-2 minutes, refresh the page showing the Infrastructure telemetry, then check in the Anthos Dashboard and you should see that roughly 85% of requests over the last few minutes have gone to version 1 because they are unathenticated. About 15% have gone to version two because they are made as jason.
+
 15% Authenticated
 
 In Cloud Shell, cancel the siege session by typing Ctrl+c.
