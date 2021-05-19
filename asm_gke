@@ -68,7 +68,7 @@ config::enable_apis() {
       privateca.googleapis.com
 }
 
-config:install_packages() {
+config::install_packages() {
   info "Installing siege a a stress tool for the cluster"
   sudo apt -y install siege
   info "Installing Netcat as recommended for ASM Install script"
