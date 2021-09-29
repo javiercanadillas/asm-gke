@@ -5,3 +5,4 @@ istio*/
 *.tar.gz
 istioctl
 asm_kubeconfig
+.asm_version
