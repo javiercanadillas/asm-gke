@@ -100,7 +100,7 @@ Containers:
 
 We can also test that a specific pod is under the service mesh by using `istioctl`:
 ```bash
-./istio-1.8.3-asm.2/bin/istioctl x \
+./istio*/bin/istioctl x \
   describe pod $(kubectl get pods | awk '/productpage/ {print $1}')
 ```
 ```text
