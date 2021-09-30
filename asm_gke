@@ -362,7 +362,7 @@ parse_args() {
       exec   > >(tee -ia ${LOGFILE})
       exec  2> >(tee -ia ${LOGFILE} >& 2)
       exec 19> ${LOGFILE}
-      export BASH_XTRACEFD="19"
+      export BASH_XTRACEFD=19
       set -x
       shift 1
       ;;
