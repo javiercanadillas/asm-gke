@@ -2,7 +2,8 @@
 ## This script is work in progress, designed to be run from Cloud Shell
 ## Javier Cañadillas - javiercm@google.com
 
-# Uncomment following line for full script debugging
+# Uncomment following line for full script debugging (see main::output_debug
+# below for more info)
 # set -x
 
 # Defaults and unmutable vars
@@ -13,29 +14,32 @@ CLUSTER_NAME=gke-asm
 red=$(tput setaf 1)
 green=$(tput setaf 2)
 reset=$(tput sgr0)
-#readonly ISTIO_VER=1.10.4
-#readonly ASM_SUBVER=14
 readonly LOGFILE="install_log"
 readonly ISTIO_MAJOR=1.10
 readonly ISTIO_MINOR=4
-readonly ISTIO_VER=${ISTIO_MAJOR}.${ISTIO_MINOR}
 readonly ASM_SUBVER=14
+readonly ISTIO_VER=${ISTIO_MAJOR}.${ISTIO_MINOR}
 readonly __SCRIPT_NAME="${0##*/}"
-readonly __SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+__SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+readonly __SCRIPT_DIR
 readonly __ASM_VER_STRING=${ISTIO_VER}-asm.${ASM_SUBVER}
 # Watch out, ASM version labels for Cluster and Istio injection DO NOT
 # follow the same naming convention
 readonly __ASMV_CLUSTER_LABEL="${__ASM_VER_STRING//\./-}"
-readonly __ASMV="asm-$(echo "${ISTIO_VER}" | tr -d '.')-${ASM_SUBVER}"
+__ASMV="asm-$(echo "${ISTIO_VER}" | tr -d '.')-${ASM_SUBVER}"
+readonly __ASMV
 readonly __ASM_PACKAGE_NAME=istio-${__ASM_VER_STRING}
 readonly __ASM_SCRIPT_DOWNLOAD_URL="https://storage.googleapis.com/csm-artifacts/asm/install_asm_${ISTIO_MAJOR}"
 readonly __ASM_DOWNLOAD_URL="https://storage.googleapis.com/gke-release/asm/${__ASM_PACKAGE_NAME}-${PLATFORM}.tar.gz"
-readonly GCP_ACCOUNT=$(gcloud config get-value account 2>/dev/null)
+GCP_ACCOUNT=$(gcloud config get-value account 2>/dev/null)
+readonly __ASMV
 
+# Function declarations
 
 config::update_vars() {
-  readonly __PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" \
+  __PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" \
   --format="value(projectNumber)" 2>/dev/null)
+  readonly __PROJECT_NUMBER
   readonly __MEMBERSHIP_NAME=${CLUSTER_NAME}-connect
 }
 
@@ -279,7 +283,7 @@ OPTIONS:
   -z|--cluster-zone <CLUSTER ZONE>  Location of the GKE cluster
 
 FLAGS:
-  -d|--debug                        Enable script debugging
+  -d|--debug                        Enable script debugging and logs it into ${LOGFILE}
   -h|--help                         Shows this help text
 
 EXAMPLES:
