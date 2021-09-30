@@ -6,3 +6,6 @@ istio*/
 istioctl
 asm_kubeconfig
 .asm_version
+LICENSES.txt
+kpt/
+lib.zip
