@@ -15,6 +15,7 @@ green=$(tput setaf 2)
 reset=$(tput sgr0)
 #readonly ISTIO_VER=1.10.4
 #readonly ASM_SUBVER=14
+readonly LOGFILE="install_log"
 readonly ISTIO_MAJOR=1.10
 readonly ISTIO_MINOR=4
 readonly ISTIO_VER=${ISTIO_MAJOR}.${ISTIO_MINOR}
@@ -228,6 +229,7 @@ main::destroy() {
   rm -rf istioctl
   rm -rf asm_kubeconfig
   rm -rf "${__SCRIPT_DIR:?}/.asm_version"
+  rm -rf "${__SCRIPT_DIR:?}/${LOGFILE}"
   rm -- *-manifest-*.yaml 2>/dev/null
   rm install_asm 2>/dev/null
 }
@@ -354,6 +356,10 @@ parse_args() {
     -d | --debug)
       # This is imperfect, because the script has already processed some lines, including default
       # variable values, but it's better than nothing
+      exec   > >(tee -ia ${LOGFILE})
+      exec  2> >(tee -ia ${LOGFILE} >& 2)
+      exec 19> ${LOGFILE}
+      export BASH_XTRACEFD="19"
       set -x
       shift 1
       ;;
