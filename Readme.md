@@ -2,7 +2,7 @@
 
 **[Updated to ASM 1.10.4-14]**
 
-This repo contains all the necessary artifacts to go from zero to demo the latest version of Anthos Service Mesh, ASM 1.10.4.
+This repo contains all the necessary artifacts to go from zero to demo the latest version of Anthos Service Mesh, ASM 1.10.4. If you want to use it with previous AMS versions, the script will work, you just have to edit it and modify the variables `ISTIO_MAJOR`, `ISTIO_MINOR=4` and `ASM_SUBVER=14`.
 
 `asm_gke` automates the deployment and destruction of a Anthos Service Mesh GKE enabled cluster in GCP. The script is designed to work witht the [ASM installation script](https://cloud.google.com/service-mesh/docs/scripted-install/reference) provided by Google Cloud.
 
@@ -38,29 +38,6 @@ Run:
 ```
 
 For step-by-step instructions on demoing ASM, read on.
-
-## But I want to run this from my local machine
-The script is not yet ready to deploy the istioclt binaries in your local machine, whatever your operating system may be. It's designed and teste only for Google Cloud Shell. However, you can get a close experience by connecting to Cloud Shell from your local shell using the GCP SDK.
-
-For illustration purposes, let's say you have a Mac. Install Google Cloud SDK, so you have the gcloud tool installed in your system. Now, let's imagine you use iTerm2. Open a new shell session and do, authenticate gcloud with the Google account you'll be using in your GCP project and do:
-
-```bash
-gcloud cloud-shell ssh --authorize-session
-```
-
-Voilà, you now have a Cloud Shell session opened from your local terminal. If you also want to manipulate remote files with an IDE, say VSCode, you can also open a new local shell session and do:
-
-```
-# Creates a mount point for Cloud Shell filesystem
-mkdir -p ~/cloudshell
-# Gets the command to mount the Cloud Shell remote filesystem on cloudshell/ and executes it
-$(cloud cloud-shell get-mount-command cloudshell)
-# Now change to the mount point and open VSCode from there
-cd cloudshell
-code .
-```
-
-You have now your local IDE editing your remote files in Cloud Shell, so you can take advantage of whatever plugins or workflows you may have enabled in your IDE.
 
 # Demoing ASM
 
