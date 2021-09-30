@@ -226,12 +226,15 @@ main::destroy() {
   rm -rf "${__SCRIPT_DIR:?}/${__ASM_PACKAGE_NAME}" 2>/dev/null
   rm -rf "${__SCRIPT_DIR:?}/asm" 2>/dev/null
   rm -rf "${__ASM_PACKAGE_NAME}-${PLATFORM}.tar.gz" 2>/dev/null
-  rm -rf istioctl
-  rm -rf asm_kubeconfig
-  rm -rf "${__SCRIPT_DIR:?}/.asm_version"
+  rm -f "${__SCRIPT_DIR:?}/istioctl"
+  rm -rf "${__SCRIPT_DIR:?}/asm_kubeconfig"
+  rm -f "${__SCRIPT_DIR:?}/.asm_version"
   rm -rf "${__SCRIPT_DIR:?}/${LOGFILE}"
   rm -- *-manifest-*.yaml 2>/dev/null
-  rm install_asm 2>/dev/null
+  rm -f "${__SCRIPT_DIR:?}/install_asm" 2>/dev/null
+  rm -f "${__SCRIPT_DIR:?}/kpt"  2>/dev/null
+  rm -f "${__SCRIPT_DIR:?}/lib.zip"  2>/dev/null
+  rm -f "${__SCRIPT_DIR:?}/LICENSES.txt"  2>/dev/null
 }
 
 main:get_asm_package() {
