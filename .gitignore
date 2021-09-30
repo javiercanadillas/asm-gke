@@ -9,3 +9,4 @@ asm_kubeconfig
 LICENSES.txt
 kpt
 lib.zip
+*_log
