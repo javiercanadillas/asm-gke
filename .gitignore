@@ -7,5 +7,5 @@ istioctl
 asm_kubeconfig
 .asm_version
 LICENSES.txt
-kpt/
+kpt
 lib.zip
