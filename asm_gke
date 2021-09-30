@@ -334,6 +334,20 @@ parse_command() {
   exit
 }
 
+main::output_debug() {
+  # This is imperfect, because the script has already processed some lines, 
+  # before reaching this point (including default variable values)
+  # but it's better than nothing. If you need outputting vars, uncomment the
+  # set -x option at the beginning of the script
+  # See https://askubuntu.com/a/1345538
+  exec   > >(tee -ia ${LOGFILE})
+  exec  2> >(tee -ia ${LOGFILE} >& 2)
+  exec {FD}> ${LOGFILE}
+  exec {FD}>> ${LOGFILE}
+  BASH_XTRACEFD="$FD"
+  set -x 
+}
+
 parse_args() {
   # shellcheck disable=SC2064
   trap "$(shopt -p nocasematch)" RETURN
@@ -357,15 +371,7 @@ parse_args() {
       shift 2
       ;;
     -d | --debug)
-      # This is imperfect, because the script has already processed some lines, including default
-      # variable values, but it's better than nothing
-      # See https://askubuntu.com/a/1345538
-      exec   > >(tee -ia ${LOGFILE})
-      exec  2> >(tee -ia ${LOGFILE} >& 2)
-      exec {FD}> ${LOGFILE}
-      exec {FD}>> ${LOGFILE}
-      BASH_XTRACEFD="$FD"
-      set -x
+      main::output_debug
       shift 1
       ;;
     -h | --help)
