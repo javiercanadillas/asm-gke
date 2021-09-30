@@ -359,10 +359,12 @@ parse_args() {
     -d | --debug)
       # This is imperfect, because the script has already processed some lines, including default
       # variable values, but it's better than nothing
+      # See https://askubuntu.com/a/1345538
       exec   > >(tee -ia ${LOGFILE})
       exec  2> >(tee -ia ${LOGFILE} >& 2)
-      exec 19> ${LOGFILE}
-      BASH_XTRACEFD=19
+      exec {FD}> ${LOGFILE}.log
+      exec {FD}>> ${LOGFILE}.log
+      export BASH_XTRACEFD="$FD"
       set -x
       shift 1
       ;;
