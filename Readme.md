@@ -2,7 +2,7 @@
 
 **[Updated to ASM 1.10.4-14]**
 
-This repo contains all the necessary artifacts to go from zero to demo the latest version of Anthos Service Mesh, ASM 1.10.4. If you want to use it with previous AMS versions, the script will work, you just have to edit it and modify the variables `ISTIO_MAJOR`, `ISTIO_MINOR=4` and `ASM_SUBVER=14`.
+This repo contains all the necessary artifacts to go from zero to demo the latest version of Anthos Service Mesh, ASM 1.10.4. If you want to use it with previous AMS versions, the script will work, you just have to edit it and modify the variables `ISTIO_MAJOR`, `ISTIO_MINOR` and `ASM_SUBVER`.
 
 `asm_gke` automates the deployment and destruction of a Anthos Service Mesh GKE enabled cluster in GCP. The script is designed to work witht the [ASM installation script](https://cloud.google.com/service-mesh/docs/scripted-install/reference) provided by Google Cloud.
 
