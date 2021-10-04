@@ -4,7 +4,7 @@ steps:
 # This build step clones the repo
 - name: 'gcr.io/cloud-builders/git'
   args: ['clone', 'https://gitlab.com/javiercanadillas/asm-gke.git']
-- name: 'gcr.io/google.com/cloudsdktool/gcloud-sdk:latest'
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:latest'
   timeout: 240s
   entrypoint: 'bash'
-  args: ['asm_gke', 'install']
+  args: ['asm_gke', 'install', '-d']
