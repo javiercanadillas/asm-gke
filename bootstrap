@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+## This script is work in progress, designed to be run from Cloud Shell
+## Javier Cañadillas - javiercm@google.com
+
+# Uncomment following line for full script debugging (see main::output_debug
+# below for more info)
+# set -x
+
+if [ "${CLOUD_SHELL}" != "true" ]; then
+    echo "You're not running in Cloud Shell. Please, connect to your Cloud Shell and try again."
+    exit 1
+fi
+
+export TF_CLOUDBUILD_SA=$(gcloud projects describe $GOOGLE_PROJECT --format='value(projectNumber)')@cloudbuild.gserviceaccount.com
+
+echo "Test"
