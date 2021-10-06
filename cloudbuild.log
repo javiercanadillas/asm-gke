@@ -1,0 +1,78 @@
+Error in installing the Connect Agent: Failed to apply manifest to cluster: Error from server (Forbidden): error when creating "STDIN": roles.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "roles" in API group "rbac.authorization.k8s.io" in the namespace "gke-connect": requires one of ["container.roles.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": rolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "rolebindings" in API group "rbac.authorization.k8s.io" in the namespace "gke-connect": requires one of ["container.roleBindings.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": roles.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "roles" in API group "rbac.authorization.k8s.io" in the namespace "gke-connect": requires one of ["container.roles.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": rolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "rolebindings" in API group "rbac.authorization.k8s.io" in the namespace "gke-connect": requires one of ["container.roleBindings.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": roles.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "roles" in API group "rbac.authorization.k8s.io" in the namespace "gke-connect": requires one of ["container.roles.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": clusterroles.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "clusterroles" in API group "rbac.authorization.k8s.io" at the cluster scope: requires one of ["container.clusterRoles.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": clusterrolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "clusterrolebindings" in API group "rbac.authorization.k8s.io" at the cluster scope: requires one of ["container.clusterRoleBindings.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": clusterrolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "clusterrolebindings" in API group "rbac.authorization.k8s.io" at the cluster scope: requires one of ["container.clusterRoleBindings.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": rolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "rolebindings" in API group "rbac.authorization.k8s.io" in the namespace "gke-connect": requires one of ["container.roleBindings.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": roles.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "roles" in API group "rbac.authorization.k8s.io" in the namespace "kube-system": requires one of ["container.roles.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": rolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "rolebindings" in API group "rbac.authorization.k8s.io" in the namespace "kube-system": requires one of ["container.roleBindings.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": clusterroles.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "clusterroles" in API group "rbac.authorization.k8s.io" at the cluster scope: requires one of ["container.clusterRoles.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": clusterrolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "clusterrolebindings" in API group "rbac.authorization.k8s.io" at the cluster scope: requires one of ["container.clusterRoleBindings.create"] permission(s).
+Step #1:
+Step #1: Waiting for membership to be deleted...
+Step #1: ...................done.
+Step #1: Deleting membership CR in the cluster...
+Step #1: ...done.
+Step #1: ERROR: (gcloud.beta.container.hub.memberships.register) Failed to apply manifest to cluster: Error from server (Forbidden): error when creating "STDIN": roles.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "roles" in API group "rbac.authorization.k8s.io" in the namespace "gke-connect": requires one of ["container.roles.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": rolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "rolebindings" in API group "rbac.authorization.k8s.io" in the namespace "gke-connect": requires one of ["container.roleBindings.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": roles.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "roles" in API group "rbac.authorization.k8s.io" in the namespace "gke-connect": requires one of ["container.roles.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": rolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "rolebindings" in API group "rbac.authorization.k8s.io" in the namespace "gke-connect": requires one of ["container.roleBindings.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": roles.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "roles" in API group "rbac.authorization.k8s.io" in the namespace "gke-connect": requires one of ["container.roles.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": clusterroles.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "clusterroles" in API group "rbac.authorization.k8s.io" at the cluster scope: requires one of ["container.clusterRoles.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": clusterrolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "clusterrolebindings" in API group "rbac.authorization.k8s.io" at the cluster scope: requires one of ["container.clusterRoleBindings.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": clusterrolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "clusterrolebindings" in API group "rbac.authorization.k8s.io" at the cluster scope: requires one of ["container.clusterRoleBindings.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": rolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "rolebindings" in API group "rbac.authorization.k8s.io" in the namespace "gke-connect": requires one of ["container.roleBindings.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": roles.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "roles" in API group "rbac.authorization.k8s.io" in the namespace "kube-system": requires one of ["container.roles.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": rolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "rolebindings" in API group "rbac.authorization.k8s.io" in the namespace "kube-system": requires one of ["container.roleBindings.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": clusterroles.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "clusterroles" in API group "rbac.authorization.k8s.io" at the cluster scope: requires one of ["container.clusterRoles.create"] permission(s).
+Step #1: Error from server (Forbidden): error when creating "STDIN": clusterrolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "clusterrolebindings" in API group "rbac.authorization.k8s.io" at the cluster scope: requires one of ["container.clusterRoleBindings.create"] permission(s).
+Step #1:
+Step #1: asm_gke: Making your account 912971218747@cloudbuild.gserviceaccount.com cluster admin
+Step #1: error: failed to create clusterrolebinding: clusterrolebindings.rbac.authorization.k8s.io is forbidden: User "912971218747@cloudbuild.gserviceaccount.com" cannot create resource "clusterrolebindings" in API group "rbac.authorization.k8s.io" at the cluster scope: requires one of ["container.clusterRoleBindings.create"] permission(s).
+Step #1: asm_gke: Downloading script for ASM 1.10.4-asm.14 and making it executable
+Step #1:   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+Step #1:                                  Dload  Upload   Total   Spent    Left  Speed
+100 89264  100 89264    0     0   541k      0 --:--:-- --:--:-- --:--:--  541k
+Step #1: asm_gke: Validating ASM installation requirements for cluster gke-asm
+Step #1: install_asm: Setting up necessary files...
+Step #1: install_asm: Using asm_kubeconfig as the kubeconfig...
+Step #1: install_asm: Fetching/writing GCP credentials to kubeconfig file...
+Step #1: install_asm: [WARNING]: nc not found, skipping k8s connection verification
+Step #1: install_asm: [WARNING]: (Installation will continue normally.)
+Step #1: install_asm: Checking installation tool dependencies...
+Step #1: install_asm: [WARNING]: Dependency not found: jq
+Step #1: install_asm: [ERROR]: One or more dependencies were not found. Please install them and retry.
+Step #1: asm_gke: Installing ASM on cluster gke-asm
+Step #1: install_asm: Setting up necessary files...
+Step #1: install_asm: Using asm_kubeconfig as the kubeconfig...
+Step #1: install_asm: Fetching/writing GCP credentials to kubeconfig file...
+Step #1: install_asm: [WARNING]: nc not found, skipping k8s connection verification
+Step #1: install_asm: [WARNING]: (Installation will continue normally.)
+Step #1: install_asm: Checking installation tool dependencies...
+Step #1: install_asm: [WARNING]: Dependency not found: jq
+Step #1: install_asm: [ERROR]: One or more dependencies were not found. Please install them and retry.
+Step #1: asm_gke: Enabling sidecar injection for the mesh
+Step #1: label "istio-injection" not found.
+Step #1: namespace/default labeled
+Step #1: asm_gke: line 162: pushd: istio-1.10.4-asm.14: No such file or directory
+Step #1: asm_gke: Checking for Bookinfo application pods readiness:
+Step #1: error: no matching resources found
+Step #1: asm_gke: Getting default namespace deployed services:
+Step #1: NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+Step #1: kubernetes   ClusterIP   10.7.240.1   <none>        443/TCP   6m17s
+Step #1: asm_gke: Getting default namespace deployed pods:
+Step #1: No resources found in default namespace.
+Step #1: asm_gke: Making sure pod "ratings" is available before connecting to it
+Step #1: error: no matching resources found
+Step #1: asm_gke: Testing connectivity from pod "ratings" to productpage, you should get an HTML title tag.
+Step #1: error: error executing jsonpath "{.items[0].metadata.name}": Error executing template: array index out of bounds: index 0, length 0. Printing more information for debugging the template:
+Step #1:        template was:
+Step #1:                {.items[0].metadata.name}
+Step #1:        object given to jsonpath engine was:
+Step #1:                map[string]interface {}{"apiVersion":"v1", "items":[]interface {}{}, "kind":"List", "metadata":map[string]interface {}{"resourceVersion":"", "selfLink":""}}
+Step #1:
+Step #1:
+Step #1: error: pod, type/name or --filename must be specified
