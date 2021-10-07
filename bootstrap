@@ -11,6 +11,7 @@ red=$(tput setaf 1)
 green=$(tput setaf 2)
 reset=$(tput sgr0)
 
+
 info "Setting Google Cloud Project to ${GOOGLE_PROJECT:-$(gcloud config get-value project)}"
 
 if [ "${CLOUD_SHELL}" != "true" ]; then
@@ -31,7 +32,7 @@ error() {
 # Enabling Cloud Build Service Account
 enable_cbsa() {
   info "Cloud Build Service Account is ${CLOUDBUILD_SA:=$(gcloud projects describe $GOOGLE_PROJECT --format='value(projectNumber)')@cloudbuild.gserviceaccount.com}"
-  if [ ! "${CLOUDBUILD_SA}" ]; then
+  if [ ! -z "${CLOUDBUILD_SA}" ]; then
     #Granting project owner access
     info "Granting Cloud Build Service Account Project Owner role"
     gcloud projects add-iam-policy-binding ${GOOGLE_PROJECT} \
@@ -45,3 +46,15 @@ enable_cbsa() {
     error "Cloud Build Service account cannot be obtained. Please check that a valid project has been set"
   fi
 }
+
+launch_cb() {
+  info "Launching pipeline defined in ${CB_CONFIG_FILE}"
+  gcloud builds submit --config "${CB_CONFIG_FILE:=cloudbuild.yaml}"
+}
+
+main() {
+  enable_cbsa
+  launch_cb
+}
+
+main "${@}"
