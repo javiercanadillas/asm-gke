@@ -12,12 +12,13 @@ green=$(tput setaf 2)
 reset=$(tput sgr0)
 
 
-info "Setting Google Cloud Project to ${GOOGLE_PROJECT:-$(gcloud config get-value project)}"
-
-if [ "${CLOUD_SHELL}" != "true" ]; then
+init_setup() {
+  info "Setting Google Cloud Project to ${GOOGLE_PROJECT:=$(gcloud config get-value project)}"
+  if [ "${CLOUD_SHELL}" != "true" ]; then
     echo "You're not running in Cloud Shell. Please, connect to your Cloud Shell and try again."
     exit 1
-fi
+  fi
+}
 
 # Info output
 info() {
@@ -53,6 +54,7 @@ launch_cb() {
 }
 
 main() {
+  init_setup
   enable_cbsa
   launch_cb
 }
