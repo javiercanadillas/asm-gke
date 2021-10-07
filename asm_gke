@@ -94,8 +94,10 @@ gke::create_cluster() {
 
 gke::rename_apply_context() {
   info "Renaming context for cluster ${CLUSTER_NAME} and enabling it"
-  kubectx "${CLUSTER_NAME}"=gke_"${PROJECT_ID}"_"${CLUSTER_ZONE}"_"${CLUSTER_NAME}"
-  kubectx "${CLUSTER_NAME}"
+  kubectl config rename-context "${CLUSTER_NAME}"=gke_"${PROJECT_ID}"_"${CLUSTER_ZONE}"_"${CLUSTER_NAME}"
+  kubectl config use-context "${CLUSTER_NAME}"
+  #kubectx "${CLUSTER_NAME}"=gke_"${PROJECT_ID}"_"${CLUSTER_ZONE}"_"${CLUSTER_NAME}"
+  #kubectx "${CLUSTER_NAME}"
 }
 
 gke::update_labels() {
