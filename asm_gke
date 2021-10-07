@@ -73,13 +73,6 @@ config::enable_apis() {
       privateca.googleapis.com
 }
 
-config::install_packages() {
-  info "Installing siege a a stress tool for the cluster"
-  sudo apt -y install siege
-  info "Installing Netcat as recommended for ASM Install script"
-  sudo apt -y install netcat
-}
-
 gke::create_cluster() {
   info "Creating cluster ${CLUSTER_NAME} in zone ${CLUSTER_ZONE}"
   # read -r -p "Press any key to continue"

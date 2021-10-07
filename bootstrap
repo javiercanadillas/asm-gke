@@ -53,8 +53,16 @@ launch_cb() {
   gcloud builds submit --config "${CB_CONFIG_FILE:=cloudbuild.yaml}"
 }
 
+config::install_packages() {
+  info "Installing siege a a stress tool for the cluster"
+  sudo apt -y install siege
+  info "Installing Netcat as recommended for ASM Install script"
+  sudo apt -y install netcat
+}
+
 main() {
   init_setup
+  config::install_packages
   enable_cbsa
   launch_cb
 }
