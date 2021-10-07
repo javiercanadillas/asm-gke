@@ -6,11 +6,42 @@
 # below for more info)
 # set -x
 
+# Variables
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+reset=$(tput sgr0)
+
+info "Setting Google Cloud Project to ${GOOGLE_PROJECT:-$(gcloud config get-value project)}"
+
 if [ "${CLOUD_SHELL}" != "true" ]; then
     echo "You're not running in Cloud Shell. Please, connect to your Cloud Shell and try again."
     exit 1
 fi
 
-export TF_CLOUDBUILD_SA=$(gcloud projects describe $GOOGLE_PROJECT --format='value(projectNumber)')@cloudbuild.gserviceaccount.com
+# Info output
+info() {
+  echo "${green}${__SCRIPT_NAME}${reset}: ${1}" >&2
+}
 
-echo "Test"
+# Error output
+error() {
+  echo "${red}${__SCRIPT_NAME}${red}: ${1}" >&2
+}
+
+# Enabling Cloud Build Service Account
+enable_cbsa() {
+  info "Cloud Build Service Account is ${CLOUDBUILD_SA:=$(gcloud projects describe $GOOGLE_PROJECT --format='value(projectNumber)')@cloudbuild.gserviceaccount.com}"
+  if [ ! "${CLOUDBUILD_SA}" ]; then
+    #Granting project owner access
+    info "Granting Cloud Build Service Account Project Owner role"
+    gcloud projects add-iam-policy-binding ${GOOGLE_PROJECT} \
+      --member serviceAccount:${CLOUDBUILD_SA} \
+      --role roles/owner
+    info "Granting Cloud Build Service Account Cluster Admin Role"
+    gcloud projects add-iam-policy-binding ${GOOGLE_PROJECT} \
+      --member serviceAccount:${CLOUDBUILD_SA} \
+      --role roles/container.admin
+  else
+    error "Cloud Build Service account cannot be obtained. Please check that a valid project has been set"
+  fi
+}
