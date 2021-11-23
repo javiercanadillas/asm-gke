@@ -1,0 +1,251 @@
+#!/usr/bin/env bash
+## This script is work in progress, designed to be run from Cloud Shell
+## Javier Cañadillas - javiercm@google.com
+
+# Uncomment following line for full script debugging (see main::output_debug
+# below for more info)
+# set -x
+
+# Script related vars
+readonly SCRIPT_NAME="${0##*/}"
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+readonly SCRIPT_DIR
+PROJECT_ID=${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}
+CLUSTER_LOC=europe-west1-b
+CLUSTER_NAME=gke-asm
+# As of Nov 2021, only regular and rapid support Managed Control Plane
+readonly CHANNEL=regular
+# ASM channels are semi-consistent with GKE channels:
+# asm-managed for GKE regular
+# asm-managed-rapid for GKE rapid
+readonly ASM_CHANNEL="asm-managed"
+readonly NAMESPACE=default
+
+# asmcli tool vars
+readonly ASMCLI_DW_URL="https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.11"
+readonly ASMCLI_PATH="${SCRIPT_DIR:?Script dir is not set!}/asmcli"
+
+# Look & feel related vars
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+reset=$(tput sgr0)
+
+
+## Format info messages with script name in green
+info() {
+  echo "${green}${SCRIPT_NAME}${reset}: ${1}" >&2
+}
+
+## Format error messages with script name in red
+error() {
+  echo "${red}${SCRIPT_NAME}${reset}: ${1}" >&2
+}
+
+## Get the directory where the script is, no matter where it is run from
+config::pwd_script_dir() {
+  info "Setting working directory at ${SCRIPT_DIR}"
+  pushd "${SCRIPT_DIR}" > /dev/null || return
+}
+
+## Enable necessary APIs
+config::enable_apis() {
+  info "Enabling necessary GCP APIs"
+  gcloud services enable \
+      container.googleapis.com \
+      compute.googleapis.com \
+      monitoring.googleapis.com \
+      logging.googleapis.com \
+      cloudtrace.googleapis.com \
+      meshca.googleapis.com \
+      meshtelemetry.googleapis.com \
+      meshconfig.googleapis.com \
+      iamcredentials.googleapis.com \
+      anthos.googleapis.com \
+      gkeconnect.googleapis.com \
+      gkehub.googleapis.com \
+      cloudresourcemanager.googleapis.com \
+      privateca.googleapis.com
+}
+
+## Install additional tooling for testing services
+config::install_packages() {
+  info "Installing siege a a stress tool for the cluster"
+  sudo apt -y install siege
+}
+
+## Creates a GKE cluster with following ASM requirements (including 
+## workload identity and a release channel)
+gke::create_cluster() {
+  info "Creating cluster ${CLUSTER_NAME} in zone ${CLUSTER_LOC}"
+  # read -r -p "Press any key to continue"
+  gcloud config set compute/zone "${CLUSTER_LOC}"
+  gcloud container clusters create "${CLUSTER_NAME}" \
+      --machine-type=n1-standard-4 \
+      --num-nodes=4 \
+      --logging=SYSTEM \
+      --monitoring=SYSTEM \
+      --subnetwork=default \
+      --release-channel="${CHANNEL}" \
+      --workload-pool="${PROJECT_ID}".svc.id.goog \
+      --verbosity=error
+}
+
+## Get cluster credentials
+gke::get_cluster_creds() {
+  info "Getting cluster credentials"
+  gcloud container clusters get-credentials "${CLUSTER_NAME}" \
+      --zone "${CLUSTER_LOC}" \
+      --project "${PROJECT_ID}"
+}
+
+## For convenience, rename the cluster context
+gke::rename_apply_context() {
+  info "Renaming context for cluster ${CLUSTER_LOC} and enabling it"
+  kubectx "${CLUSTER_NAME}"=gke_"${PROJECT_ID}"_"${CLUSTER_LOC}"_"${CLUSTER_NAME}"
+  kubectx "${CLUSTER_NAME}"
+}
+
+## Downloads the asmcli tool in the base script directory
+asm::get_asmcli() {
+  info "Downloading the asmcli tool"
+  curl "${ASMCLI_DW_URL}" > "${ASMCLI_PATH}"
+  chmod +x "${ASMCLI_PATH}"
+}
+
+## Install Google-managed control plane with asmcli experimental
+asm::install_asm_cp() {
+  info "Deploying ASM Google-managed control plane"
+  ./asmcli x install \
+      -p "${PROJECT_ID}" \
+      -l "${CLUSTER_LOC}" \
+      -n "${CLUSTER_NAME}" \
+      --managed \
+      --verbose \
+      --output_dir "${CLUSTER_NAME}" \
+      --enable-all
+}
+
+## Test Google-managed control plane deployment
+asm::test_asm_cp() {
+    kubectl describe controlplanerevision ${ASM_CHANNEL} -n istio-system
+}
+
+## Removes any previous Istio injection label and applies the right one
+asm::enable_injection() {
+  info "Enabling sidecar injection for the mesh"
+  kubectl label namespace ${NAMESPACE} istio-injection- istio.io/rev="${ASM_CHANNEL}" --overwrite
+}
+
+## Enable Google ASM Data Plane
+asm::enable_managed_data_plane() {
+  info "Enabling ASM managed data plane"
+  kubectl annotate --overwrite namespace ${NAMESPACE} \
+    mesh.cloud.google.com/proxy='{"managed":"true"}'
+}
+
+## Check ASM Managed Data Plane status
+asm::check_mdp_status() {
+  local MDP_STATUS
+  MDP_STATUS=$(kubectl get dataplanecontrols \
+    -o custom-columns=REV:.spec.revision,STATUS:.status.state \
+    | grep ${ASM_CHANNEL} | grep "Ready" > /dev/null)
+  if ${MDP_STATUS}; then
+    info "Managed Data Plane is ready."
+  else
+    error "Managed Data Plane is NOT ready."
+  fi
+}
+
+## Wrapper function to display Istio Ingress Gateway IP
+asm::get_gateway_ip() {
+  info "Getting the ASM Ingress Gateway IP address"
+  # Loop until the load balancer is up and running
+  asm::get_gateway_ip_core
+  info "Load Balancer IP is ${GATEWAY_IP}"
+}
+
+## Get Istio Ingress Gateway IP
+asm::get_gateway_ip_core() {
+  export GATEWAY_IP
+  while [ -z "${GATEWAY_IP}" ]; do
+      GATEWAY_IP=$(kubectl get svc istio-ingressgateway -o=jsonpath='{.status.loadBalancer.ingress[0].ip}' -n istio-system)
+      sleep 1
+  done
+  echo "${GATEWAY_IP}"
+}
+
+## Deploy Bookinfo application. More in https://istio.io/latest/docs/examples/bookinfo/
+app::deploy() {
+  # pushd "${SCRIPT_DIR}/artifacts" || return >/dev/null
+  info "Deploying Bookinfo application pods in cluster ${CLUSTER_NAME}" 
+  info "See https://istio.io/latest/docs/examples/bookinfo/ for more information"
+  kubectl apply -f artifacts/bookinfo.yaml
+  info "Configuring Istio Ingress Gateway for the application"
+  kubectl apply -f artifacts/bookinfo-gateway.yaml
+}
+
+## Test that everything is deployed correctly
+app:check_deployment() {
+  info "Checking for Bookinfo application pods readiness:"
+  # Wait for deployements to be ready
+  kubectl wait --for=condition=available --timeout=60s --all deployments
+  info "Getting default namespace deployed services:"
+  kubectl get services
+  info "Getting default namespace deployed pods:"
+  kubectl get pods
+  info "Making sure pod \"ratings\" is available before connecting to it"
+  kubectl wait --for=condition=ready pod -l app=ratings --timeout=60s
+  info "Testing connectivity from pod \"ratings\" to productpage, you should get an HTML title tag."
+  kubectl exec -it "$(kubectl get pod -l app=ratings \
+    -o jsonpath='{.items[0].metadata.name}')" \
+    -c ratings -- curl productpage:9080/productpage | grep -o  "<title>.*</title>"
+  echo
+}
+
+## Remove all previosly installed services and artifacts
+main::destroy() {
+  info "Removing cluster ${CLUSTER_NAME} and related conf/install artifacts"
+  config::pwd_script_dir
+  # Remove cluster
+  gcloud container clusters delete "${CLUSTER_NAME}" --zone "${CLUSTER_LOC}" --quiet
+
+  # Unregister cluster from Hub, this membership was created by asmcli named after the cluster
+  gcloud container hub memberships delete "${CLUSTER_NAME}" --quiet
+
+  # Delete local files
+  # By default, asmcli creates a directory named after the cluster where ASM is installed
+  # with binaries and examples
+  rm -rf "${SCRIPT_DIR:?Script dir is not set\!}/${CLUSTER_NAME}"
+  
+  # Delete asmcli binary
+  rm -rf "${SCRIPT_DIR:?Script dir is not set\!}/asmcli"
+}
+
+## Main infra installation wrapper
+main::install() {
+  config::pwd_script_dir
+  config::enable_apis
+  config::install_packages
+  gke::create_cluster
+  gke::get_cluster_creds
+  gke::rename_apply_context
+  asm::get_asmcli
+  asm::install_asm_cp
+  asm::enable_injection
+  app::enable_managed_data_plane
+  app:check_mpd_status
+  asm::get_gateway_ip
+}
+
+## Main App Deployment wrapper
+main:app_deploy() {
+  app::deploy
+  app::check_deployment
+}
+
+main() {
+    main::install
+    main:app_deploy
+}
+
+main "[@]"
