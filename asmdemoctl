@@ -248,6 +248,7 @@ Google Cloud Project: ${PROJECT_ID}
 GCP account: ${GCP_ACCOUNT}
 Cluster Name: ${CLUSTER_NAME}
 Region/Zone: ${CLUSTER_LOC}
+GKE Channel: ${CHANNEL}
 ASM Channel: ${ASM_CHANNEL}
 ASM Output Directory: ${SCRIPT_DIR}
 EOF
