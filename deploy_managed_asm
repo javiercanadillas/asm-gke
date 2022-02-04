@@ -13,6 +13,8 @@ readonly SCRIPT_DIR
 PROJECT_ID=${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}
 CLUSTER_LOC=europe-west1-b
 CLUSTER_NAME=gke-asm
+PLATFORM=linux-amd64
+readonly LOGFILE="install_log"
 # As of Nov 2021, only regular and rapid support Managed Control Plane
 readonly CHANNEL=regular
 # ASM channels are semi-consistent with GKE channels:
@@ -232,9 +234,22 @@ main::install() {
   asm::get_asmcli
   asm::install_asm_cp
   asm::enable_injection
-  app::enable_managed_data_plane
+  asm::enable_managed_data_plane
   app:check_mpd_status
   asm::get_gateway_ip
+}
+
+main::show_config() {
+  cat << EOF
+This is the configuration to be applied when running ${__SCRIPT_NAME}:
+Platform: ${PLATFORM}
+Google Cloud Project: ${PROJECT_ID}
+GCP account: ${GCP_ACCOUNT}
+Cluster Name: ${CLUSTER_NAME}
+Region/Zone: ${CLUSTER_ZONE}
+ASM Channel: ${ASM_CHANNEL}
+ASM Output Directory: ${SCRIPT_DIR}
+EOF
 }
 
 ## Main App Deployment wrapper
@@ -243,9 +258,111 @@ main:app_deploy() {
   app::check_deployment
 }
 
-main() {
-    main::install
-    main:app_deploy
+#main() {
+#    main::show_config
+#    main::install
+#   main:app_deploy
+#}
+
+
+parse_command() {
+  # shellcheck disable=SC2064
+  trap "$(shopt -p nocasematch)" RETURN
+  shopt -s nocasematch
+
+  case "${1}" in
+  install)
+    if [ -z "${PROJECT_ID}" ]; then
+      echo "${red}Error${reset}: you must set a GCP project. Try doing \'gcloud config set project <projectname>\' before running the script."
+    else
+      main::install
+    fi
+    ;;
+  destroy | uninstall | remove)
+    main::destroy
+    ;;
+  #get-asm-package | get_asm_package | gap)
+  #  main:get_asm_package
+  #  ;;
+  show-config | show_config)
+    main::show_config
+    ;;
+  get-gw-ip | get_gw_ip)
+    asm::get_gateway_ip_core
+    ;;
+  *) #Catch empty or not listed command
+    if [ -z "${1}" ]; then
+      echo "Error: command not supplied, try again."
+    else
+      echo "Error: invalid command \"${1}\""
+      echo ""
+      main::usage
+    fi
+    ;;
+  esac
+  exit
 }
 
-main "[@]"
+main::output_debug() {
+  # This is imperfect, because the script has already processed some lines, 
+  # before reaching this point (including default variable values)
+  # but it's better than nothing. If you need outputting vars, uncomment the
+  # set -x option at the beginning of the script
+  # See https://askubuntu.com/a/1345538
+  exec   > >(tee -ia ${LOGFILE})
+  exec  2> >(tee -ia ${LOGFILE} >& 2)
+  exec {FD}> ${LOGFILE}
+  exec {FD}>> ${LOGFILE}
+  BASH_XTRACEFD="$FD"
+  set -x 
+}
+
+parse_args() {
+  # shellcheck disable=SC2064
+  trap "$(shopt -p nocasematch)" RETURN
+  shopt -s nocasematch
+
+  while [[ $# != 0 ]]; do
+    case "${1}" in
+    -p | --project_id)
+      arg_required "${@}"
+      PROJECT_ID="${2}"
+      shift 2
+      ;;
+    -c | --cluster_name | --cluster-name)
+      arg_required "${@}"
+      CLUSTER_NAME="${2}"
+      shift 2
+      ;;
+    -z | --cluster_zone | --cluster-zone)
+      arg_required "${@}"
+      CLUSTER_LOC="${2}"
+      shift 2
+      ;;
+    -d | --debug)
+      main::output_debug
+      shift 1
+      ;;
+    -h | --help)
+      main::usage
+      exit
+      ;;
+    --* | -*=)
+      echo "Error: unsupported flag ${1}" >&2
+      exit 1
+      ;;
+    *)
+      PARAMS+=("${1}")
+      shift
+      ;;
+    esac
+  done
+}
+
+main() {
+  parse_args "${@}"
+  config::update_vars
+  parse_command "${PARAMS[*]}"
+}
+
+main "${@}"
