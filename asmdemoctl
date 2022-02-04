@@ -361,7 +361,6 @@ parse_args() {
 
 main() {
   parse_args "${@}"
-  config::update_vars
   parse_command "${PARAMS[*]}"
 }
 
