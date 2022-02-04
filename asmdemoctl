@@ -236,7 +236,7 @@ main::install() {
   asm::install_asm_cp
   asm::enable_injection
   asm::enable_managed_data_plane
-  app:check_mpd_status
+  app:check_mdp_status
   asm::get_gateway_ip
 }
 
