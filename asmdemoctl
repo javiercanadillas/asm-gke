@@ -13,6 +13,7 @@ readonly SCRIPT_DIR
 PROJECT_ID=${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}
 CLUSTER_LOC=europe-west1-b
 CLUSTER_NAME=gke-asm
+GCP_ACCOUNT=$(gcloud config get-value account 2>/dev/null)
 PLATFORM=linux-amd64
 readonly LOGFILE="install_log"
 # As of Nov 2021, only regular and rapid support Managed Control Plane
@@ -246,7 +247,7 @@ Platform: ${PLATFORM}
 Google Cloud Project: ${PROJECT_ID}
 GCP account: ${GCP_ACCOUNT}
 Cluster Name: ${CLUSTER_NAME}
-Region/Zone: ${CLUSTER_ZONE}
+Region/Zone: ${CLUSTER_LOC}
 ASM Channel: ${ASM_CHANNEL}
 ASM Output Directory: ${SCRIPT_DIR}
 EOF
