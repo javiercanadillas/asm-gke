@@ -28,6 +28,10 @@ readonly NAMESPACE=default
 readonly ASMCLI_DW_URL="https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.11"
 readonly ASMCLI_PATH="${SCRIPT_DIR:?Script dir is not set!}/asmcli"
 
+# Bookinfo vars
+readonly ISTIO_DIR="${SCRIPT_DIR:?Script dir is not set!}/${CLUSTER_NAME}/istio-*"
+readonly BOOKINFO_DIR="${ISTIO_DIR}/samples/bookinfo/platform/kube"
+
 # Look & feel related vars
 red=$(tput setaf 1)
 green=$(tput setaf 2)
@@ -179,12 +183,15 @@ asm::get_gateway_ip_core() {
 
 ## Deploy Bookinfo application. More in https://istio.io/latest/docs/examples/bookinfo/
 app::deploy() {
-  # pushd "${SCRIPT_DIR}/artifacts" || return >/dev/null
+  # Move the current shell to the Bookinfo artifacts dir
+  pushd "${BOOKINFO_DIR}" || return >/dev/null
   info "Deploying Bookinfo application pods in cluster ${CLUSTER_NAME}" 
   info "See https://istio.io/latest/docs/examples/bookinfo/ for more information"
-  kubectl apply -f artifacts/bookinfo.yaml
+  kubectl apply -f bookinfo.yaml
   info "Configuring Istio Ingress Gateway for the application"
-  kubectl apply -f artifacts/bookinfo-gateway.yaml
+  kubectl apply -f bookinfo-gateway.yaml
+  # Return to previous directory
+  popd +0
 }
 
 ## Test that everything is deployed correctly
@@ -236,7 +243,7 @@ main::install() {
   asm::install_asm_cp
   asm::enable_injection
   asm::enable_managed_data_plane
-  app:check_mdp_status
+  asm:check_mdp_status
   asm::get_gateway_ip
 }
 
