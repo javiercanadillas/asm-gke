@@ -386,6 +386,97 @@ Now test the new routing configuration using the Bookinfo UI:
 
 You can sign out, and try signing in as other users. You will no longer see stars with reviews.
 
+## Security
+
+Our application uses by default permissive mTLS rules, meaning all services accept requests that are not TLS encrypted. mTLS, or mutual TLS, verify the identity of pods that communicate with each other. 
+
+We can verify that this is the case by going to the console > Security (preview). You should see mTLS as permissive, as in the below image.
+
+Let's double check by simulating an attack from a compromised pod within the cluster.
+
+First let's create a nginx pod in a separate namespace. Note that this namespace is outside of the mesh.
+```bash
+kubectl create namespace compromised-namespace
+kubectl run compromised-pod  --image nginx -n compromised-namespace
+```
+
+Then let's request the address and port used by one of the other pods in our mesh.
+
+```bash 
+export IP_PRODUCT_PAGE=$(kubectl get svc -l app=productpage -o jsonpath='{.items[0].spec.clusterIPs[0]}')
+export PORT_PRODUCT_PAGE=$(kubectl get svc -l app=productpage -o jsonpath='{.items[0].spec.ports[0].port}')
+```
+
+Now we can simulate an attack, by requesting a pod of the mesh, from the compromised pod outside the mesh.
+
+```bash
+kubectl exec compromised-pod -n compromised-namespace -- curl -sS $IP_PRODUCT_PAGE:$PORT_PRODUCT_PAGE/productpage | grep -o "<title>.*</title>"
+```
+
+You should see the following output:
+```bash
+xxx
+```
+
+From a compromised pod outside of the mesh, we can get all the data we want from pods inside the mesh, since we don't require any authentication. To respect Zero trust principles, we need to enforce mTLS to make sure communications within the cluster are encrypted.
+
+### Apply mTLS destination rules and policy for all versions
+
+The file we are going to apply here is `artifacts/destination-rule-all-mtls.yaml`. **Edit it and have a look at its structure**:
+
+```bash
+less artifacts/destination-rule-all-mtls.yaml
+```
+
+This configuration files does xxx. Apply it
+
+```bash
+kubectl apply -f samples/bookinfo/networking/destination-rule-all-mtls.yaml
+```
+```text
+destinationrule.networking.istio.io/productpage created
+destinationrule.networking.istio.io/reviews created
+destinationrule.networking.istio.io/ratings created
+destinationrule.networking.istio.io/details created
+```
+Now, we can apply the mTLS restrictive policy, to enforce that pods within the mesh are only allowed to communicate using mTLS.
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: "security.istio.io/v1beta1"
+kind: "PeerAuthentication"
+metadata:
+  name: "auth-policy-name"
+  namespace: "istio-system"
+spec:
+  mtls:
+    mode: STRICT
+EOF
+```
+
+You can review the details of the destination rules by asking for the yaml:
+
+```bash
+kubectl get destinationrules -o yaml
+```
+
+### Verify the enforcement of mTLS
+
+If you go back to console > Security (preview), yu should see mTLS as strict, as in the below image.
+
+Let's try again to attack the mesh from our compromised-pod:
+
+```bash
+kubectl exec compromised-pod -n compromised-namespace -- curl -sS $IP_PRODUCT_PAGE:$PORT_PRODUCT_PAGE/productpage | grep -o "<title>.*</title>"
+```
+
+Because the compromised pod is outside of the service mesh, it can't be identified with mTLS. You should receive the following error, meaning the request was refused.
+
+```bash
+xxx
+```
+
+
 # Tearing down the environment
 To tear down the environment and restore your project the way it was before running the script, run:
 
