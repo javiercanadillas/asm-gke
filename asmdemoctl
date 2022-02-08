@@ -263,19 +263,6 @@ ASM Output Directory: ${SCRIPT_DIR}
 EOF
 }
 
-## Main App Deployment wrapper
-main:app_deploy() {
-  app::deploy
-  app::check_deployment
-}
-
-#main() {
-#    main::show_config
-#    main::install
-#   main:app_deploy
-#}
-
-
 parse_command() {
   # shellcheck disable=SC2064
   trap "$(shopt -p nocasematch)" RETURN
