@@ -189,7 +189,7 @@ app::deploy() {
   info "See https://istio.io/latest/docs/examples/bookinfo/ for more information"
   kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
   info "Configuring Istio Ingress Gateway for the application"
-  kubectl apply -f samples/bookinfo/networking/bookinfo-ingress.yaml
+  kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
   # Return to previous directory
   popd +0 || return >/dev/null
 }
