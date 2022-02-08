@@ -29,7 +29,7 @@ readonly ASMCLI_DW_URL="https://storage.googleapis.com/csm-artifacts/asm/asmcli_
 readonly ASMCLI_PATH="${SCRIPT_DIR:?Script dir is not set!}/asmcli"
 
 # Bookinfo vars
-readonly ISTIO_DIR="$CLUSTER_NAME/istio-*"
+readonly ISTIO_DIR="$SCRIPT_DIR/$CLUSTER_NAME/istio-*"
 readonly BOOKINFO_DIR="$ISTIO_DIR/samples/bookinfo/platform/kube"
 
 # Look & feel related vars
