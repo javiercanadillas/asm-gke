@@ -251,7 +251,7 @@ main::install() {
 
 main::show_config() {
   cat << EOF
-This is the configuration to be applied when running ${__SCRIPT_NAME}:
+This is the configuration to be applied when running ${SCRIPT_NAME}:
 Platform: ${PLATFORM}
 Google Cloud Project: ${PROJECT_ID}
 GCP account: ${GCP_ACCOUNT}
