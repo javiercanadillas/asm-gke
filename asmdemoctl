@@ -30,7 +30,6 @@ readonly ASMCLI_PATH="${SCRIPT_DIR:?Script dir is not set!}/asmcli"
 
 # Bookinfo vars
 readonly ISTIO_DIR="$SCRIPT_DIR/$CLUSTER_NAME/istio-*"
-readonly BOOKINFO_DIR="$ISTIO_DIR/samples/bookinfo/platform/kube"
 
 # Look & feel related vars
 red=$(tput setaf 1)
@@ -185,12 +184,12 @@ asm::get_gateway_ip_core() {
 app::deploy() {
   # Move the current shell to the Bookinfo artifacts dir
   # shellcheck disable=SC2086
-  pushd $BOOKINFO_DIR || return >/dev/null
+  pushd $ISTIO_DIR || return >/dev/null
   info "Deploying Bookinfo application pods in cluster ${CLUSTER_NAME}" 
   info "See https://istio.io/latest/docs/examples/bookinfo/ for more information"
-  kubectl apply -f bookinfo.yaml
+  kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
   info "Configuring Istio Ingress Gateway for the application"
-  kubectl apply -f bookinfo-ingress.yaml
+  kubectl apply -f samples/bookinfo/networking/bookinfo-ingress.yaml
   # Return to previous directory
   popd +0 || return >/dev/null
 }
