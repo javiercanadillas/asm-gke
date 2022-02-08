@@ -192,7 +192,7 @@ app::deploy() {
   info "Configuring Istio Ingress Gateway for the application"
   kubectl apply -f bookinfo-ingress.yaml
   # Return to previous directory
-  popd +0 || return
+  popd +0 || return >/dev/null
 }
 
 ## Test that everything is deployed correctly
