@@ -388,9 +388,11 @@ You can sign out, and try signing in as other users. You will no longer see star
 
 ## Security
 
-Our application uses by default permissive mTLS rules, meaning all services accept requests that are not TLS encrypted. mTLS, or mutual TLS, verify the identity of pods that communicate with each other. 
+Our application uses by default permissive mTLS rules, meaning all services accept requests that are not TLS encrypted. mTLS, or mutual TLS, verifies the identity of pods that communicate with each other. 
 
 We can verify that this is the case by going to the console > Security (preview). You should see mTLS as permissive, as in the below image.
+
+![View mtls disabled](img/view_mtls_disabled.png)
 
 Let's double check by simulating an attack from a compromised pod within the cluster.
 
@@ -407,7 +409,7 @@ export IP_PRODUCT_PAGE=$(kubectl get svc -l app=productpage -o jsonpath='{.items
 export PORT_PRODUCT_PAGE=$(kubectl get svc -l app=productpage -o jsonpath='{.items[0].spec.ports[0].port}')
 ```
 
-Now we can simulate an attack, by requesting a pod of the mesh, from the compromised pod outside the mesh.
+Now we can simulate an attack, by requesting a pod in the mesh, from the compromised pod outside the mesh.
 
 ```bash
 kubectl exec compromised-pod -n compromised-namespace -- curl -sS $IP_PRODUCT_PAGE:$PORT_PRODUCT_PAGE/productpage | grep -o "<title>.*</title>"
@@ -428,7 +430,7 @@ The file we are going to apply here is `artifacts/destination-rule-all-mtls.yaml
 less artifacts/destination-rule-all-mtls.yaml
 ```
 
-This configuration files does xxx. Apply it
+This configuration files is exactly the same as `destination-rule-all.yaml` except it specifies the traffic policy as mTLS for all destination rules. Apply it with the following command.
 
 ```bash
 kubectl apply -f samples/bookinfo/networking/destination-rule-all-mtls.yaml
@@ -453,6 +455,9 @@ spec:
     mode: STRICT
 EOF
 ```
+```bash
+peerauthentication.security.istio.io/auth-policy-name created
+```
 
 You can review the details of the destination rules by asking for the yaml:
 
@@ -462,7 +467,8 @@ kubectl get destinationrules -o yaml
 
 ### Verify the enforcement of mTLS
 
-If you go back to console > Security (preview), yu should see mTLS as strict, as in the below image.
+If you go back to console > Security (preview), you should now see mTLS set as strict, as in the below image.
+![View mtls enabled](img/view_mtls_enabled.png)
 
 Let's try again to attack the mesh from our compromised-pod:
 
