@@ -184,14 +184,14 @@ asm::get_gateway_ip_core() {
 ## Deploy Bookinfo application. More in https://istio.io/latest/docs/examples/bookinfo/
 app::deploy() {
   # Move the current shell to the Bookinfo artifacts dir
-  #pushd "${BOOKINFO_DIR}" || return >/dev/null
+  pushd "${ISTIO_DIR}" || return >/dev/null
   info "Deploying Bookinfo application pods in cluster ${CLUSTER_NAME}" 
   info "See https://istio.io/latest/docs/examples/bookinfo/ for more information"
-  kubectl apply -f "${BOOKINFO_DIR}/bookinfo.yaml"
+  kubectl apply -f /samples/bookinfo/platform/kube/bookinfo.yaml
   info "Configuring Istio Ingress Gateway for the application"
-  kubectl apply -f "${BOOKINFO_DIR}/bookinfo-gateway.yaml"
+  kubectl apply -f /samples/bookinfo/platform/kube/bookinfo-gateway.yaml
   # Return to previous directory
-  #popd +0
+  popd +0
 }
 
 ## Test that everything is deployed correctly
