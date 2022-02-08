@@ -196,7 +196,7 @@ app::deploy() {
 }
 
 ## Test that everything is deployed correctly
-app:check_deployment() {
+app::check_deployment() {
   info "Checking for Bookinfo application pods readiness:"
   # Wait for deployements to be ready
   kubectl wait --for=condition=available --timeout=60s --all deployments
