@@ -21,7 +21,7 @@ readonly CHANNEL=regular
 # ASM channels are semi-consistent with GKE channels:
 # asm-managed for GKE regular
 # asm-managed-rapid for GKE rapid
-readonly ASM_CHANNEL="asm-managed"
+readonly ASM_CHANNEL="asm-managed-rapid"
 readonly NAMESPACE=default
 
 # asmcli tool vars
