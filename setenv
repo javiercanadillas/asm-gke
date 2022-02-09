@@ -1,4 +1,4 @@
-GW_IP=$(./asm_gke get-gw-ip)
+GW_IP=$(./asmdemoctl get-gw-ip)
 GW_URL="http://$GW_IP/productpage"
 echo $GW_URL
 export GW_IP GW_URL
