@@ -17,7 +17,7 @@ GCP_ACCOUNT=$(gcloud config get-value account 2>/dev/null)
 PLATFORM=linux-amd64
 readonly LOGFILE="install_log"
 # As of Nov 2021, only regular and rapid support Managed Control Plane
-readonly CHANNEL=regular
+readonly CHANNEL=rapid
 # ASM channels are semi-consistent with GKE channels:
 # asm-managed for GKE regular
 # asm-managed-rapid for GKE rapid
