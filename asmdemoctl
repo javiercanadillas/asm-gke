@@ -23,6 +23,7 @@ readonly CHANNEL=rapid
 # asm-managed-rapid for GKE rapid
 readonly ASM_CHANNEL="asm-managed-rapid"
 readonly NAMESPACE=default
+readonly GW_NAMESPACE=istio-gateway
 
 # asmcli tool vars
 readonly ASMCLI_DW_URL="https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.11"
@@ -140,6 +141,7 @@ asm::test_asm_cp() {
 asm::enable_injection() {
   info "Enabling sidecar injection for the mesh"
   kubectl label namespace ${NAMESPACE} istio-injection- istio.io/rev="${ASM_CHANNEL}" --overwrite
+  kubectl label namespace ${GW_NAMESPACE} istio-injection- istio.io/rev="${ASM_CHANNEL}" --overwrite
 }
 
 ## Enable Google ASM Data Plane
@@ -174,7 +176,7 @@ asm::get_gateway_ip() {
 asm::get_gateway_ip_core() {
   export GATEWAY_IP
   while [ -z "${GATEWAY_IP}" ]; do
-      GATEWAY_IP=$(kubectl get svc istio-ingressgateway -o=jsonpath='{.status.loadBalancer.ingress[0].ip}' -n $NAMESPACE)
+      GATEWAY_IP=$(kubectl get svc istio-ingressgateway -o=jsonpath='{.status.loadBalancer.ingress[0].ip}' -n $GW_NAMESPACE)
       sleep 1
   done
   echo "${GATEWAY_IP}"
@@ -185,7 +187,7 @@ istio::deploy_gateway() {
   info "Deploying Istio Ingress Gateway in cluster ${CLUSTER_NAME}"
   # shellcheck disable=SC2086
   pushd $SCRIPT_DIR > /dev/null || return
-  kubectl apply -f "$CLUSTER_NAME/samples/gateways/istio-ingressgateway" -n "$NAMESPACE"
+  kubectl apply -f "$CLUSTER_NAME/samples/gateways/istio-ingressgateway" -n "$GW_NAMESPACE"
   popd +0 >/dev/null || return
 }
 
