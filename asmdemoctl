@@ -185,7 +185,7 @@ istio::deploy_gateway() {
   info "Deploying Istio Ingress Gateway in cluster ${CLUSTER_NAME}"
   # shellcheck disable=SC2086
   pushd $SCRIPT_DIR > /dev/null || return
-  kubectl apply -f "$CLUSTER_NAME/samples/gateways/istio-ingressgateway" -n istio-system
+  kubectl apply -f "$CLUSTER_NAME/samples/gateways/istio-ingressgateway" -n "$NAMESPACE"
   popd +0 >/dev/null || return
 }
 
