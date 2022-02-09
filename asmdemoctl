@@ -137,6 +137,12 @@ asm::test_asm_cp() {
     kubectl describe controlplanerevision ${ASM_CHANNEL} -n istio-system
 }
 
+## Create Namespace for Istio Gateway
+asm::create_namespace() {
+    info "Creating namespace for Istio Gateway deployment"
+    kubectl create namespace $GW_NAMESPACE
+}
+
 ## Removes any previous Istio injection label and applies the right one
 asm::enable_injection() {
   info "Enabling sidecar injection for the mesh"
@@ -252,6 +258,8 @@ main::install() {
   gke::rename_apply_context
   asm::get_asmcli
   asm::install_asm_cp
+  asm::test_asm_cp
+  asm:: create_namespace
   asm::enable_injection
   asm::enable_managed_data_plane
   asm::check_mdp_status
