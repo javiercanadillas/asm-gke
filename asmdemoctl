@@ -259,7 +259,7 @@ main::install() {
   asm::get_asmcli
   asm::install_asm_cp
   asm::test_asm_cp
-  asm:: create_namespace
+  asm::create_namespace
   asm::enable_injection
   asm::enable_managed_data_plane
   asm::check_mdp_status
