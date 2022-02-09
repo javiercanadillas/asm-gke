@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-## This script is work in progress, designed to be run from Cloud Shell
+## This script is work in progress, and designed to be run from Cloud Shell
 ## Javier Cañadillas - javiercm@google.com
 
 # Uncomment following line for full script debugging (see main::output_debug
@@ -180,18 +180,27 @@ asm::get_gateway_ip_core() {
   echo "${GATEWAY_IP}"
 }
 
+## Deploy Istio Gateway
+istio::deploy_gateway() {
+  # shellcheck disable=SC2086
+  info "Deploying Istio Ingress Gateway in cluster ${CLUSTER_NAME}"
+  pushd $SCRIPT_DIR > /dev/null || return
+  kubectl apply -f "$CLUSTER_NAME/samples/gateways/istio-ingressgateway" -n istio-system
+  popd +0 >/dev/null || return
+}
+
 ## Deploy Bookinfo application. More in https://istio.io/latest/docs/examples/bookinfo/
 app::deploy() {
   # Move the current shell to the Bookinfo artifacts dir
   # shellcheck disable=SC2086
-  pushd $ISTIO_DIR || return >/dev/null
+  pushd $ISTIO_DIR > /dev/null || return
   info "Deploying Bookinfo application pods in cluster ${CLUSTER_NAME}" 
   info "See https://istio.io/latest/docs/examples/bookinfo/ for more information"
   kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
   info "Configuring Istio Ingress Gateway for the application"
   kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
   # Return to previous directory
-  popd +0 || return >/dev/null
+  popd +0 >/dev/null || return 
 }
 
 ## Test that everything is deployed correctly
@@ -244,6 +253,7 @@ main::install() {
   asm::enable_injection
   asm::enable_managed_data_plane
   asm::check_mdp_status
+  istio::deploy_gateway
   app::deploy
   app::check_deployment
   asm::get_gateway_ip
