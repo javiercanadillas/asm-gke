@@ -1,14 +1,14 @@
-# Introduction
+# Getting started with Anthos Service Mesh on GKE
 
-**[Updated to ASM 1.10.4-14]**
+ ## Introduction - UPDATE
 
-This repo contains all the necessary artifacts to go from zero to demo the latest version of Anthos Service Mesh, ASM 1.10.4. If you want to use it with previous AMS versions, the script will work, you just have to edit it and modify the variables `ISTIO_MAJOR`, `ISTIO_MINOR` and `ASM_SUBVER`.
+This repo contains all the necessary artifacts to go from zero to demo the latest version of Anthos Service Mesh using the ASM managed version (Control plane and Data plane).
 
-`asm_gke` automates the deployment and destruction of a Anthos Service Mesh GKE enabled cluster in GCP. The script is designed to work witht the [ASM installation script](https://cloud.google.com/service-mesh/docs/scripted-install/reference) provided by Google Cloud.
+`asmdemoctl` automates the deployment and destruction of a Anthos Service Mesh GKE enabled cluster in GCP. The script is designed to work with the `asmcli` channel under the hood as well as the stable ASM channel.
 
 The script is designed to work with GCP's Cloud Shell. You will need editor permissions on a GCP project and, if you're a googler, GCE enforcer disabled.
 
-# Setting up the environment
+## Setting up the environment
 
 Open Cloud Shell, and make sure your active project is the one you want to deploy everything in:
 
@@ -19,29 +19,29 @@ gcloud config set project <your project ID>
 Once that's done, check the environment variables picked up by the script:
 
 ```bash
-./asm_gke show-config
+./asmdemoctl show-config
 ```
 
 and when you're confidend everything looks alright run it:
 
 ```bash
-./asm_gke install
+./asmdemoctl install
 ```
 
 That's it. You should have a cluster running with Anthos Service Mesh enabled on it and the sample Istio application [Bookinfo](https://istio.io/latest/docs/examples/bookinfo/) deployed.
 
-## Getting help and options
+### Getting help and options
 
 Run:
 ```bash
-./asm_gke --help
+./asmdemoctl --help
 ```
 
 For step-by-step instructions on demoing ASM, read on.
 
-# Demoing ASM
+## Demoing ASM
 
-The `asm_gke` script has deployed Istio's Bookinfo application for you. Read the [introduction at Istio's website](https://istio.io/latest/docs/examples/bookinfo/) to understand the basics of what you've just deployed. The application microservices architecture looks like this:
+The `asmdemoctl` script has deployed Istio's Bookinfo application for you. Read the [introduction at Istio's website](https://istio.io/latest/docs/examples/bookinfo/) to understand the basics of what you've just deployed. The application microservices architecture looks like this:
 
 ![Bookinfo](https://istio.io/latest/docs/examples/bookinfo/withistio.svg)
 
@@ -166,7 +166,7 @@ echo "$GW_URL" | pbcopy
 
 and paste (CMD + V) it into your browser address bar to load the BookInfo web page.
 
-## An overview of the ASM dashboard
+### An overview of the ASM dashboard
 
 To see relevant information in the ASM dashboard, we need to generate some load. Let's do that with an application called `siege`. Because Cloud Shell VM is ephemeral, you'll need to install it first:
 
@@ -180,7 +180,7 @@ and the use it to create traffic against your services:
 siege $GW_URL &
 ```
 
-### Evaluating service performance using ASM's dashboard
+#### Evaluating service performance using ASM's dashboard
 
 Now, go to [console.cloud.google.com] and 
 - navigate to **Anthos>Dashboard**
@@ -197,7 +197,7 @@ Now, go to [console.cloud.google.com] and
 - **Rearrange the nodes in the graph** to easily visualize the relationships.
 
 
-## Traffic Management
+### Traffic Management
 
 Our application has a gateway configuration artifact called `bookinfo-gateway` that controls the configuration of the Ingress Gateway. We've already explored its configuration, it just enables HTTP traffic over port 80.
 
@@ -257,7 +257,7 @@ kubectl get destinationrules
 No resources found in default namespace.
 ```
 
-### Apply destination rules for all versions
+#### Apply destination rules for all versions
 
 Currently, **no destination rules exist** because the installation script didn't create any. Let's now define all the available versions, using the concept of subset, in destination rules.
 
@@ -303,7 +303,7 @@ kubectl get destinationrules -o yaml
 
 Now wait for a couple of minutes and go back to the **Anthos Service Mesh console**. Select the **reviews** service and then select **Traffic** from the left menu. You should see that the traffic is evenly distributed into the three versions.
 
-### Configure Virtual Services to use these Destination Rules
+#### Configure Virtual Services to use these Destination Rules
 
 Let's now deploy new virtual services for each service that are going to route all traffic to just v1 of the services workload. First, have a look at the new virtual services we're just going to deploy:
 
@@ -327,7 +327,7 @@ Now test the new behavior. Go to the **Anthos Service Mesh console** and select 
 
 You can also check it by going to `http://GW_URL`, refreshing several times and noticing that **the Book Reviews part of the page displays with no rating stars**, no matter how many times you refresh. This is because you configured Istio to route all traffic for the reviews service to the version reviews:v1 and **this version of the service does not access the star ratings service**.
 
-### Route to specific version of a service based on user identity
+#### Route to specific version of a service based on user identity
 
 You can also change the route configuration so that all traffic from a specific user is routed to a specific service version. In this case, all traffic from user jason will be routed to the service reviews:v2, the version that includes the star ratings feature.
 
@@ -386,24 +386,9 @@ Now test the new routing configuration using the Bookinfo UI:
 
 You can sign out, and try signing in as other users. You will no longer see stars with reviews.
 
-# Tearing down the environment
+## Tearing down the environment
 To tear down the environment and restore your project the way it was before running the script, run:
 
 ```bash
 ./asm_gke destroy
 ```
-
-# Todos
-
-- Include installation option to enable Anthos 1.9 Managed Control Plane instead of deploying it in the Kubernetes cluster
-- Include installation option that uses the newer `asmctl` tool.
-- Include gradual shift of traffic per service version.
-- Add installation option to deploy a ASM-enable GCE VM, moving one of the bookinfo services there.
-- Enable the script to work on Linux, Cloud Shell and Mac OS X (tooling for OS X
-  in curl -OL https://github.com/istio/istio/releases/download/1.8.1/istioctl-1.8.1-osx.tar.gz)
-- Enable workload identity and configure cluster labels in one call at cluster creation, it should be
-  slightly faster than doing the steps atomically.
-- Force install_asm to understand the specific version this script is requesting to install. By
-  default, install_asm always sets the last ASM version, and version stickiness is achieved by
-  bash variables instead of flags or argument. So, I should export here the corresponding vars
-  MAJOR, MINOR, POINT and REV
