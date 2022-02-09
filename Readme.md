@@ -182,7 +182,7 @@ siege $GW_URL &
 
 ### Evaluating service performance using ASM's dashboard
 
-Now, go to [console.cloud.google.com] and 
+Now, go to the [GCP Console](https://console.cloud.google.com) and 
 - navigate to **Anthos>Dashboard**
 - Click on **View Service Mesh**
   ![View Service Mesh](img/view_service_mesh.png)
@@ -388,39 +388,41 @@ You can sign out, and try signing in as other users. You will no longer see star
 
 ## Security
 
-Our application uses by default permissive mTLS rules, meaning all services accept requests that are not TLS encrypted. mTLS, or mutual TLS, verifies the identity of pods that communicate with each other. 
+mTLS, or mutual TLS, verifies the identity of pods that communicate with each other. Our application uses by default permissive mTLS rules, meaning all services accept requests that are not authentified. 
 
-We can verify that this is the case by going to the console > Security (preview). You should see mTLS as permissive, as in the below image.
+You can verify this on the [GCP Console](https://console.cloud.google.com), if you navigate to **Anthos>Security** you should see mTLS as permissive.
 
-![View mtls disabled](img/view_mtls_disabled.png)
+  ![View mTLS disabled](img/view_mtls_disabled.png)
 
-Let's double check by simulating an attack from a compromised pod within the cluster.
+Let's demonstrate this weakness by simulating an attack from a compromised pod within the cluster.
 
-First let's create a nginx pod in a separate namespace. Note that this namespace is outside of the mesh.
+First let's create a nginx pod in a separate namespace that is in the same cluster, but outside of the service mesh.
+
 ```bash
 kubectl create namespace compromised-namespace
 kubectl run compromised-pod  --image nginx -n compromised-namespace
 ```
 
-Then let's get the address and port used by one of the other pods in our mesh, here the productpage one.
+Then let's get the address and port used by one of the other pods in our service mesh, for example the productpage one.
 
 ```bash 
 export IP_PRODUCT_PAGE=$(kubectl get svc -l app=productpage -o jsonpath='{.items[0].spec.clusterIPs[0]}')
 export PORT_PRODUCT_PAGE=$(kubectl get svc -l app=productpage -o jsonpath='{.items[0].spec.ports[0].port}')
 ```
 
-Now we can simulate an attack, by requesting a pod in the mesh, from the compromised pod outside the mesh.
+Now we can simulate an attack, by curling a pod in the mesh from the compromised pod outside the mesh.
 
 ```bash
 kubectl exec compromised-pod -n compromised-namespace -- curl -sS $IP_PRODUCT_PAGE:$PORT_PRODUCT_PAGE/productpage | grep -o "<title>.*</title>"
 ```
 
 You should see the following output:
+
 ```bash
 <title>Simple Bookstore App</title>
 ```
 
-From a compromised pod outside of the mesh, we can get all the data we want from pods inside the mesh, since we don't require any authentication. To respect Zero trust principles, we need to enforce mTLS to make sure communications within the cluster are encrypted.
+From a compromised pod outside of the mesh, we can get all the data we want from pods inside the mesh, since pods in the service mesh don't require any authentication. To respect Zero trust principles, we need to enforce mTLS to make sure communications within the service mesh are encrypted.
 
 ### Apply mTLS destination rules and policy for all versions
 
@@ -430,7 +432,7 @@ The file we are going to apply here is `artifacts/destination-rule-all-mtls.yaml
 less artifacts/destination-rule-all-mtls.yaml
 ```
 
-This configuration files is exactly the same as `destination-rule-all.yaml` except it specifies the traffic policy as mTLS for all destination rules. Apply it with the following command.
+This configuration files is exactly the same as `destination-rule-all.yaml` that we saw earlier, except it specifies the traffic policy as mTLS for all destination rules. Apply it with the following command.
 
 ```bash
 kubectl apply -f samples/bookinfo/networking/destination-rule-all-mtls.yaml
@@ -441,6 +443,7 @@ destinationrule.networking.istio.io/reviews created
 destinationrule.networking.istio.io/ratings created
 destinationrule.networking.istio.io/details created
 ```
+
 Now, we can apply the mTLS restrictive policy, to enforce that pods within the mesh are only allowed to communicate using mTLS.
 
 ```bash
@@ -467,8 +470,10 @@ kubectl get destinationrules -o yaml
 
 ### Verify the enforcement of mTLS
 
-If you go back to console > Security (preview), you should now see mTLS set as strict, as in the below image.
-![View mtls enabled](img/view_mtls_enabled.png)
+Now, go to the [GCP Console](https://console.cloud.google.com) and navigate to **Anthos>Security**
+You should see mTLS being enforced.
+
+  ![View mTLS enabled](img/view_mtls_enabled.png)
 
 Let's try again to attack the mesh from our compromised-pod:
 
@@ -476,13 +481,12 @@ Let's try again to attack the mesh from our compromised-pod:
 kubectl exec compromised-pod -n compromised-namespace -- curl -sS $IP_PRODUCT_PAGE:$PORT_PRODUCT_PAGE/productpage | grep -o "<title>.*</title>"
 ```
 
-Because the compromised pod is outside of the service mesh, it can't be identified with mTLS. You should receive the following error, meaning the request was refused.
-
 ```bash
 curl: (56) Recv failure: Connection reset by peer
 command terminated with exit code 56
 ```
 
+Because the compromised pod is outside of the service mesh, it can't be identified with mTLS, so you should receive the error as above meaning the request was refused. We now have a safer cluster and are one step closer to respecting Zero Trust principles!
 
 # Tearing down the environment
 To tear down the environment and restore your project the way it was before running the script, run:
