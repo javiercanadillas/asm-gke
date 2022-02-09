@@ -1,12 +1,12 @@
 # Getting started with Anthos Service Mesh on GKE
 
- ## Introduction - UPDATE
+ ## Introduction
 
-This repo contains all the necessary artifacts to go from zero to demo the latest version of Anthos Service Mesh using the ASM managed version (Control plane and Data plane).
+This repo contains all the necessary artifacts to go from zero to demo the latest version of Anthos Service Mesh (ASM) using ASM managed version (Control plane and Data plane) on top of GKE.
 
-`asmdemoctl` automates the deployment and destruction of a Anthos Service Mesh GKE enabled cluster in GCP. The script is designed to work with the `asmcli` channel under the hood as well as the stable ASM channel.
+The main script `asmdemoctl` automates the deployment and destruction of a Anthos Service Mesh GKE enabled cluster in GCP. It is designed to work with the `asmcli` tool under the hood, and uses the rapid channel for both GKE and ASM by default.
 
-The script is designed to work with GCP's Cloud Shell. You will need editor permissions on a GCP project and, if you're a googler, GCE enforcer disabled.
+The whole demo is designed to work with GCP's Cloud Shell. You will need editor permissions on a GCP project and, if you're a Googler, GCE enforcer disabled to be able to access the sample application from outside.
 
 ## Setting up the environment
 
@@ -45,7 +45,7 @@ The `asmdemoctl` script has deployed Istio's Bookinfo application for you. Read 
 
 ![Bookinfo](https://istio.io/latest/docs/examples/bookinfo/withistio.svg)
 
-Having a polyglot application (with microservices written in different languages), although a reflection of real life, is typically a pain in the ass for a demoer to fully understand the deployment details in Kubernetes. But in this case, we're talking about demoing Istio and it's ability to abstract away implementation details (like security and communications in this case), so it's quite relevant to have it this way.
+Having a polyglot application (with microservices written in different languages), although a reflection of real life, is typically a pain for a demoer to fully understand the deployment details in Kubernetes. But in this case, as we want to showcase Istio's ability to abstract away implementation details (like security, & inter-service communications), it is pretty convenient to see how this diversity does not stand in the way of a common service management layer.
 
 ## Checking the deployment
 
@@ -82,25 +82,26 @@ reviews-v3-7dbcdcbc56-twlh2       2/2     Running   0          15h
 Each pod has two containers running, one for implementing the service logic and the other one for the ASM proxy sidecar that has been injected automatically when deploying the application. We can see that by inspecting any of the services and having a look a the `Containers` attribute:
 
 ```bash
-kubectl describe pod productpage
+kubectl describe pod $(kubectl get pods awk '/productpage/ {print $1}')
 ```
 ```text
 [...]
 Containers:
-  productpage:
-    Container ID:   docker://b6929b11f06079328f9c379d2e54b9849245d232aab9d18c412d09fc4f58eda9
-    Image:          docker.io/istio/examples-bookinfo-productpage-v1:1.16.2
+  reviews:
+    Container ID:   containerd://525ae7a4390a38e4398b920d3ee545e84d1c36f1be8d347708654cc47793fea6
+    Image:          docker.io/istio/examples-bookinfo-reviews-v3:1.16.2
 [...]
   istio-proxy:
-    Container ID:  docker://1b10430bf7f1576b77b6248876f88358253f8f879935356d27368828b42f1996
-    Image:         gcr.io/gke-release/asm/proxyv2:1.8.3-asm.2
-    Image ID:      docker-pullable://gcr.io/gke-release/asm/proxyv2@sha256:d3c55c913888d4d50d3f5e6f50461af14592327bc40078a67e6529ebc935bf0f
+    Container ID:  containerd://867041237cdce3ed03bc4eff15b97e87a2395c577971531d7a23c9890310f149
+    Image:         gcr.io/gke-release/asm/proxyv2:1.12.2-asm.0
+    Image ID:      gcr.io/gke-release/asm/proxyv2@sha256:05efd28f8334fb62b0dab1a04b4d02b41824ba2a25f4bcea36c78300692776e2
+    Port:          15090/TCP
 [...]
 ```
 
 We can also test that a specific pod is under the service mesh by using `istioctl`:
 ```bash
-./istio*/bin/istioctl x \
+./*/istio*/bin/istioctl x \
   describe pod $(kubectl get pods | awk '/productpage/ {print $1}')
 ```
 ```text
@@ -132,15 +133,16 @@ Spec:
  We can see that the gateway object is associated with the default Istio Ingress Gateway, that we can check in the `istio-system` namespace:
 
  ```bash
- kubectl describe svc istio-ingressgateway -n istio-system
+ kubectl describe svc istio-ingressgateway -n istio-gateway
  ```
  ```text
  [...]
  Type:                     LoadBalancer
-IP Families:              <none>
-IP:                       10.3.252.189
-IPs:                      <none>
-LoadBalancer Ingress:     35.195.98.104
+IP Family Policy:         SingleStack
+IP Families:              IPv4
+IP:                       10.16.5.221
+IPs:                      10.16.5.221
+LoadBalancer Ingress:     34.78.54.235
 [...]
 ```
 
@@ -153,7 +155,7 @@ curl -I "$GW_URL"
 ```text
 HTTP/1.1 200 OK
 content-type: text/html; charset=utf-8
-content-length: 4183
+content-length: 5179
 server: istio-envoy
 [...]
 ```
@@ -161,7 +163,7 @@ server: istio-envoy
 Now copy the application URL in the clipboard:
 
 ```bash
-echo "$GW_URL" | pbcopy
+echo "$GW_URL"
 ```
 
 and paste (CMD + V) it into your browser address bar to load the BookInfo web page.
@@ -257,20 +259,20 @@ kubectl get destinationrules
 No resources found in default namespace.
 ```
 
-#### Apply destination rules for all versions
+### Apply destination rules for all versions
 
 Currently, **no destination rules exist** because the installation script didn't create any. Let's now define all the available versions, using the concept of subset, in destination rules.
 
 The file we're going to be applying here is `artifacts/destination-rule-all.yaml`. **Edit it and have a look at its structure**:
 
 ```yaml
-cat artifacts/destination-rule-all.yaml
+cat */istio-*/samples/bookinfo/networking/destination-rule-all.yaml
 ```
 
 Then, apply a config that defines 4 `DestinationRule` resources, 1 for each service (all are in the same file):
 
 ```bash
-kubectl apply -f samples/bookinfo/networking/destination-rule-all.yaml
+kubectl apply -f */istio-*/samples/bookinfo/networking/destination-rule-all.yaml
 ```
 ```text
 destinationrule.networking.istio.io/productpage created
@@ -303,12 +305,19 @@ kubectl get destinationrules -o yaml
 
 Now wait for a couple of minutes and go back to the **Anthos Service Mesh console**. Select the **reviews** service and then select **Traffic** from the left menu. You should see that the traffic is evenly distributed into the three versions.
 
-#### Configure Virtual Services to use these Destination Rules
+![Evenly distributed traffic](img/revisions.png)
+
+### Configure Virtual Services to use these Destination Rules
 
 Let's now deploy new virtual services for each service that are going to route all traffic to just v1 of the services workload. First, have a look at the new virtual services we're just going to deploy:
 
 ```bash
-cat artifacts/virtual-service-all-v1.yaml
+cat */istio-*/samples/bookinfo/networking/virtual-service-all-v1.yaml
+```
+
+And then deploy them:
+```bash
+kubectl apply -f */istio-*/samples/bookinfo/networking/virtual-service-all-v1.yaml
 ```
 ```text
 virtualservice.networking.istio.io/productpage created
@@ -327,7 +336,7 @@ Now test the new behavior. Go to the **Anthos Service Mesh console** and select 
 
 You can also check it by going to `http://GW_URL`, refreshing several times and noticing that **the Book Reviews part of the page displays with no rating stars**, no matter how many times you refresh. This is because you configured Istio to route all traffic for the reviews service to the version reviews:v1 and **this version of the service does not access the star ratings service**.
 
-#### Route to specific version of a service based on user identity
+### Route to specific version of a service based on user identity
 
 You can also change the route configuration so that all traffic from a specific user is routed to a specific service version. In this case, all traffic from user jason will be routed to the service reviews:v2, the version that includes the star ratings feature.
 
@@ -336,7 +345,7 @@ Note: Istio does not have any special, built-in understanding of user identity. 
 Review the new VirtualService config:
 
 ```bash
-more ./artifacts/virtual-service-reviews-test-v2.yaml
+more */istio-*/samples/bookinfo/networking/virtual-service-reviews-test-v2.yaml
 ```
 ```text
 apiVersion: networking.istio.io/v1alpha3
@@ -364,7 +373,7 @@ spec:
 Apply the config that defines 1 VirtualService resource:
 
 ```bash
-kubectl apply -f samples/bookinfo/networking/virtual-service-reviews-test-v2.yaml
+kubectl apply -f */istio-*/samples/bookinfo/networking/virtual-service-reviews-test-v2.yaml
 ```
 ```text
 virtualservice.networking.istio.io/reviews configured
@@ -390,5 +399,5 @@ You can sign out, and try signing in as other users. You will no longer see star
 To tear down the environment and restore your project the way it was before running the script, run:
 
 ```bash
-./asm_gke destroy
+./asmdemoctl destroy
 ```
