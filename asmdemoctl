@@ -174,7 +174,7 @@ asm::get_gateway_ip() {
 asm::get_gateway_ip_core() {
   export GATEWAY_IP
   while [ -z "${GATEWAY_IP}" ]; do
-      GATEWAY_IP=$(kubectl get svc istio-ingressgateway -o=jsonpath='{.status.loadBalancer.ingress[0].ip}' -n istio-system)
+      GATEWAY_IP=$(kubectl get svc istio-ingressgateway -o=jsonpath='{.status.loadBalancer.ingress[0].ip}' -n $NAMESPACE)
       sleep 1
   done
   echo "${GATEWAY_IP}"
