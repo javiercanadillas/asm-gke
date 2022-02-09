@@ -402,7 +402,7 @@ kubectl create namespace compromised-namespace
 kubectl run compromised-pod  --image nginx -n compromised-namespace
 ```
 
-Then let's request the address and port used by one of the other pods in our mesh.
+Then let's get the address and port used by one of the other pods in our mesh, here the productpage one.
 
 ```bash 
 export IP_PRODUCT_PAGE=$(kubectl get svc -l app=productpage -o jsonpath='{.items[0].spec.clusterIPs[0]}')
@@ -417,7 +417,7 @@ kubectl exec compromised-pod -n compromised-namespace -- curl -sS $IP_PRODUCT_PA
 
 You should see the following output:
 ```bash
-xxx
+<title>Simple Bookstore App</title>
 ```
 
 From a compromised pod outside of the mesh, we can get all the data we want from pods inside the mesh, since we don't require any authentication. To respect Zero trust principles, we need to enforce mTLS to make sure communications within the cluster are encrypted.
@@ -479,7 +479,8 @@ kubectl exec compromised-pod -n compromised-namespace -- curl -sS $IP_PRODUCT_PA
 Because the compromised pod is outside of the service mesh, it can't be identified with mTLS. You should receive the following error, meaning the request was refused.
 
 ```bash
-xxx
+curl: (56) Recv failure: Connection reset by peer
+command terminated with exit code 56
 ```
 
 
