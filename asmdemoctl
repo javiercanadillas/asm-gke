@@ -182,8 +182,8 @@ asm::get_gateway_ip_core() {
 
 ## Deploy Istio Gateway
 istio::deploy_gateway() {
-  # shellcheck disable=SC2086
   info "Deploying Istio Ingress Gateway in cluster ${CLUSTER_NAME}"
+  # shellcheck disable=SC2086
   pushd $SCRIPT_DIR > /dev/null || return
   kubectl apply -f "$CLUSTER_NAME/samples/gateways/istio-ingressgateway" -n istio-system
   popd +0 >/dev/null || return
