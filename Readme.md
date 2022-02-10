@@ -261,10 +261,10 @@ No resources found in default namespace.
 
 Currently, **no destination rules exist** because the installation script didn't create any. Let's now define all the available versions, using the concept of subset, in destination rules.
 
-The file we're going to be applying here is `artifacts/destination-rule-all.yaml`. **Edit it and have a look at its structure**:
+The file we're going to be applying here is `samples/bookinfo/networking/destination-rule-all.yaml`. **Edit it and have a look at its structure**:
 
 ```yaml
-cat artifacts/destination-rule-all.yaml
+cat samples/bookinfo/networking/destination-rule-all.yaml
 ```
 
 Then, apply a config that defines 4 `DestinationRule` resources, 1 for each service (all are in the same file):
@@ -308,7 +308,7 @@ Now wait for a couple of minutes and go back to the **Anthos Service Mesh consol
 Let's now deploy new virtual services for each service that are going to route all traffic to just v1 of the services workload. First, have a look at the new virtual services we're just going to deploy:
 
 ```bash
-cat artifacts/virtual-service-all-v1.yaml
+cat samples/bookinfo/networking/virtual-service-all-v1.yaml
 ```
 ```text
 virtualservice.networking.istio.io/productpage created
@@ -336,7 +336,7 @@ Note: Istio does not have any special, built-in understanding of user identity. 
 Review the new VirtualService config:
 
 ```bash
-more ./artifacts/virtual-service-reviews-test-v2.yaml
+more samples/bookinfo/networking/virtual-service-reviews-test-v2.yaml
 ```
 ```text
 apiVersion: networking.istio.io/v1alpha3
@@ -428,10 +428,10 @@ From a compromised pod outside of the mesh, we can get request data from pods in
 
 We will first apply destination rules that use mTLS, then apply an authentication policy that enforces strict mTLS.
 
-First, the file we are going to apply is `artifacts/destination-rule-all-mtls.yaml`. **Edit it and have a look at its structure**:
+First, the file we are going to apply is `samples/bookinfo/networking/destination-rule-all-mtls.yaml`. **Edit it and have a look at its structure**:
 
 ```bash
-less artifacts/destination-rule-all-mtls.yaml
+less samples/bookinfo/networking/destination-rule-all-mtls.yaml
 ```
 
 This configuration files is exactly the same as `destination-rule-all.yaml` that we saw earlier, except it specifies the traffic policy as mTLS for all destination rules. Apply it with the following command.
