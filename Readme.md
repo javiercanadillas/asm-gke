@@ -410,7 +410,7 @@ export IP_PRODUCT_PAGE=$(kubectl get svc -l app=productpage -o jsonpath='{.items
 export PORT_PRODUCT_PAGE=$(kubectl get svc -l app=productpage -o jsonpath='{.items[0].spec.ports[0].port}')
 ```
 
-Now we can simulate an attack, by curling a pod in the mesh from the compromised pod outside the mesh.
+We can simulate an attack by curling a pod in the mesh from the compromised pod outside the mesh.
 
 ```bash
 kubectl exec compromised-pod -n compromised-namespace -- curl -sS $IP_PRODUCT_PAGE:$PORT_PRODUCT_PAGE/productpage | grep -o "<title>.*</title>"
@@ -422,11 +422,13 @@ You should see the following output:
 <title>Simple Bookstore App</title>
 ```
 
-From a compromised pod outside of the mesh, we can get all the data we want from pods inside the mesh, since pods in the service mesh don't require any authentication. To respect Zero trust principles, we need to enforce mTLS to make sure communications within the service mesh are encrypted.
+From a compromised pod outside of the mesh, we can get request data from pods inside the mesh, since pods in the service mesh don't require any authentication. To respect Zero trust principles, we need to enforce strict mTLS rules to make sure communications within the service mesh are encrypted.
 
 ### Apply mTLS destination rules and policy for all versions
 
-The file we are going to apply here is `artifacts/destination-rule-all-mtls.yaml`. **Edit it and have a look at its structure**:
+We will first apply destination rules that use mTLS, then apply an authentication policy that enforces strict mTLS.
+
+First, the file we are going to apply is `artifacts/destination-rule-all-mtls.yaml`. **Edit it and have a look at its structure**:
 
 ```bash
 less artifacts/destination-rule-all-mtls.yaml
@@ -486,7 +488,7 @@ curl: (56) Recv failure: Connection reset by peer
 command terminated with exit code 56
 ```
 
-Because the compromised pod is outside of the service mesh, it can't be identified with mTLS, so you should receive the error as above meaning the request was refused. We now have a safer cluster and are one step closer to respecting Zero Trust principles!
+Because the compromised pod is outside of the service mesh, it can't be identified with mTLS. The productpage pod refuses the request and the compromised pod receives the error above. We now have a safer cluster and are one step closer to respecting Zero Trust principles!
 
 # Tearing down the environment
 To tear down the environment and restore your project the way it was before running the script, run:
