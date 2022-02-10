@@ -313,14 +313,11 @@ Let's now deploy new virtual services for each service that are going to route a
 
 ```bash
 cat */istio-*/samples/bookinfo/networking/virtual-service-all-v1.yaml
-<<<<<<< HEAD
 ```
 
 And then deploy them:
 ```bash
 kubectl apply -f */istio-*/samples/bookinfo/networking/virtual-service-all-v1.yaml
-=======
->>>>>>> L-e-N/asm-gke-master
 ```
 ```text
 virtualservice.networking.istio.io/productpage created
@@ -398,14 +395,6 @@ Now test the new routing configuration using the Bookinfo UI:
 
 You can sign out, and try signing in as other users. You will no longer see stars with reviews.
 
-<<<<<<< HEAD
-## Tearing down the environment
-To tear down the environment and restore your project the way it was before running the script, run:
-
-```bash
-./asmdemoctl destroy
-```
-=======
 ## Security
 
 mTLS, or mutual TLS, verifies the identity of pods that communicate with each other. Our application uses by default permissive mTLS rules, meaning all services accept requests that are not authentified. 
@@ -514,21 +503,5 @@ Because the compromised pod is outside of the service mesh, it can't be identifi
 To tear down the environment and restore your project the way it was before running the script, run:
 
 ```bash
-./asm_gke destroy
+./asmdemoctl destroy
 ```
-
-# Todos
-
-- Include installation option to enable Anthos 1.9 Managed Control Plane instead of deploying it in the Kubernetes cluster
-- Include installation option that uses the newer `asmctl` tool.
-- Include gradual shift of traffic per service version.
-- Add installation option to deploy a ASM-enable GCE VM, moving one of the bookinfo services there.
-- Enable the script to work on Linux, Cloud Shell and Mac OS X (tooling for OS X
-  in curl -OL https://github.com/istio/istio/releases/download/1.8.1/istioctl-1.8.1-osx.tar.gz)
-- Enable workload identity and configure cluster labels in one call at cluster creation, it should be
-  slightly faster than doing the steps atomically.
-- Force install_asm to understand the specific version this script is requesting to install. By
-  default, install_asm always sets the last ASM version, and version stickiness is achieved by
-  bash variables instead of flags or argument. So, I should export here the corresponding vars
-  MAJOR, MINOR, POINT and REV
->>>>>>> L-e-N/asm-gke-master
