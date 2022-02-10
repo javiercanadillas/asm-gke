@@ -184,7 +184,7 @@ siege $GW_URL &
 
 #### Evaluating service performance using ASM's dashboard
 
-Now, go to [console.cloud.google.com] and 
+Now, go to the [GCP Console](https://console.cloud.google.com) and 
 - navigate to **Anthos>Dashboard**
 - Click on **View Service Mesh**
   ![View Service Mesh](img/view_service_mesh.png)
@@ -263,7 +263,7 @@ No resources found in default namespace.
 
 Currently, **no destination rules exist** because the installation script didn't create any. Let's now define all the available versions, using the concept of subset, in destination rules.
 
-The file we're going to be applying here is `artifacts/destination-rule-all.yaml`. **Edit it and have a look at its structure**:
+The file we're going to be applying here is `destination-rule-all.yaml`. **Edit it and have a look at its structure**:
 
 ```yaml
 cat */istio-*/samples/bookinfo/networking/destination-rule-all.yaml
@@ -313,11 +313,14 @@ Let's now deploy new virtual services for each service that are going to route a
 
 ```bash
 cat */istio-*/samples/bookinfo/networking/virtual-service-all-v1.yaml
+<<<<<<< HEAD
 ```
 
 And then deploy them:
 ```bash
 kubectl apply -f */istio-*/samples/bookinfo/networking/virtual-service-all-v1.yaml
+=======
+>>>>>>> L-e-N/asm-gke-master
 ```
 ```text
 virtualservice.networking.istio.io/productpage created
@@ -395,9 +398,137 @@ Now test the new routing configuration using the Bookinfo UI:
 
 You can sign out, and try signing in as other users. You will no longer see stars with reviews.
 
+<<<<<<< HEAD
 ## Tearing down the environment
 To tear down the environment and restore your project the way it was before running the script, run:
 
 ```bash
 ./asmdemoctl destroy
 ```
+=======
+## Security
+
+mTLS, or mutual TLS, verifies the identity of pods that communicate with each other. Our application uses by default permissive mTLS rules, meaning all services accept requests that are not authentified. 
+
+You can verify this on the [GCP Console](https://console.cloud.google.com), if you navigate to **Anthos>Security** you should see mTLS as permissive.
+
+  ![View mTLS disabled](img/view_mtls_disabled.png)
+
+Let's demonstrate this weakness by simulating an attack from a compromised pod within the cluster.
+
+First let's create a nginx pod in a separate namespace that is in the same cluster, but outside of the service mesh.
+
+```bash
+kubectl create namespace compromised-namespace
+kubectl run compromised-pod  --image nginx -n compromised-namespace
+```
+
+Then let's get the address and port used by one of the other pods in our service mesh, for example the productpage one.
+
+```bash 
+export IP_PRODUCT_PAGE=$(kubectl get svc -l app=productpage -o jsonpath='{.items[0].spec.clusterIPs[0]}')
+export PORT_PRODUCT_PAGE=$(kubectl get svc -l app=productpage -o jsonpath='{.items[0].spec.ports[0].port}')
+```
+
+We can simulate an attack by curling a pod in the mesh from the compromised pod outside the mesh.
+
+```bash
+kubectl exec compromised-pod -n compromised-namespace -- curl -sS $IP_PRODUCT_PAGE:$PORT_PRODUCT_PAGE/productpage | grep -o "<title>.*</title>"
+```
+
+You should see the following output:
+
+```bash
+<title>Simple Bookstore App</title>
+```
+
+From a compromised pod outside of the mesh, we can get request data from pods inside the mesh, since pods in the service mesh don't require any authentication. To respect Zero trust principles, we need to enforce strict mTLS rules to make sure communications within the service mesh are encrypted.
+
+### Apply mTLS destination rules and policy for all versions
+
+We will first apply destination rules that use mTLS, then apply an authentication policy that enforces strict mTLS.
+
+First, the file we are going to apply is `destination-rule-all-mtls.yaml`. **Edit it and have a look at its structure**:
+
+```bash
+less */istio-*/samples/bookinfo/networking/destination-rule-all-mtls.yaml
+```
+
+This configuration files is exactly the same as `destination-rule-all.yaml` that we saw earlier, except it specifies the traffic policy as mTLS for all destination rules. Apply it with the following command.
+
+```bash
+kubectl apply -f */istio-*/samples/bookinfo/networking/destination-rule-all-mtls.yaml
+```
+```text
+destinationrule.networking.istio.io/productpage created
+destinationrule.networking.istio.io/reviews created
+destinationrule.networking.istio.io/ratings created
+destinationrule.networking.istio.io/details created
+```
+
+Now, we can apply the mTLS restrictive policy, to enforce that pods within the mesh are only allowed to communicate using mTLS.
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: "security.istio.io/v1beta1"
+kind: "PeerAuthentication"
+metadata:
+  name: "auth-policy-name"
+  namespace: "istio-system"
+spec:
+  mtls:
+    mode: STRICT
+EOF
+```
+```bash
+peerauthentication.security.istio.io/auth-policy-name created
+```
+
+You can review the details of the destination rules by asking for the yaml:
+
+```bash
+kubectl get destinationrules -o yaml
+```
+
+### Verify the enforcement of mTLS
+
+Now, go to the [GCP Console](https://console.cloud.google.com) and navigate to **Anthos>Security**
+You should see mTLS being enforced.
+
+  ![View mTLS enabled](img/view_mtls_enabled.png)
+
+Let's try again to attack the mesh from our compromised-pod:
+
+```bash
+kubectl exec compromised-pod -n compromised-namespace -- curl -sS $IP_PRODUCT_PAGE:$PORT_PRODUCT_PAGE/productpage | grep -o "<title>.*</title>"
+```
+
+```bash
+curl: (56) Recv failure: Connection reset by peer
+command terminated with exit code 56
+```
+
+Because the compromised pod is outside of the service mesh, it can't be identified with mTLS. The productpage pod refuses the request and the compromised pod receives the error above. We now have a safer cluster and are one step closer to respecting Zero Trust principles!
+
+# Tearing down the environment
+To tear down the environment and restore your project the way it was before running the script, run:
+
+```bash
+./asm_gke destroy
+```
+
+# Todos
+
+- Include installation option to enable Anthos 1.9 Managed Control Plane instead of deploying it in the Kubernetes cluster
+- Include installation option that uses the newer `asmctl` tool.
+- Include gradual shift of traffic per service version.
+- Add installation option to deploy a ASM-enable GCE VM, moving one of the bookinfo services there.
+- Enable the script to work on Linux, Cloud Shell and Mac OS X (tooling for OS X
+  in curl -OL https://github.com/istio/istio/releases/download/1.8.1/istioctl-1.8.1-osx.tar.gz)
+- Enable workload identity and configure cluster labels in one call at cluster creation, it should be
+  slightly faster than doing the steps atomically.
+- Force install_asm to understand the specific version this script is requesting to install. By
+  default, install_asm always sets the last ASM version, and version stickiness is achieved by
+  bash variables instead of flags or argument. So, I should export here the corresponding vars
+  MAJOR, MINOR, POINT and REV
+>>>>>>> L-e-N/asm-gke-master
