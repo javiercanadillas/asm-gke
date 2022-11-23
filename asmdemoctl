@@ -11,6 +11,7 @@ readonly SCRIPT_NAME="${0##*/}"
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 readonly SCRIPT_DIR
 PROJECT_ID=${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}
+NETWORK=${NETWORK:-default}
 CLUSTER_LOC=europe-west1-b
 CLUSTER_NAME=gke-asm
 GCP_ACCOUNT=$(gcloud config get-value account 2>/dev/null)
@@ -91,7 +92,7 @@ gke::create_cluster() {
       --num-nodes=4 \
       --logging=SYSTEM \
       --monitoring=SYSTEM \
-      --subnetwork=default \
+      --network=${NETWORK} \
       --release-channel="${CHANNEL}" \
       --workload-pool="${PROJECT_ID}".svc.id.goog \
       --verbosity=error

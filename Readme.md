@@ -28,6 +28,12 @@ and when you're confidend everything looks alright run it:
 ./asmdemoctl install
 ```
 
+If you have a network setup in your project different that the default `default`, set an enviroment variable NETWORK for the `asmdemoctl` script to pick it up:
+
+```bash
+NETWORK="main" ./asmdemoctl install
+```
+
 That's it. You should have a cluster running with Anthos Service Mesh enabled on it and the sample Istio application [Bookinfo](https://istio.io/latest/docs/examples/bookinfo/) deployed.
 
 ### Getting help and options
